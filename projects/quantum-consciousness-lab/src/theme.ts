@@ -1,0 +1,15 @@
+export const COLORS = {
+  bg: '#080A12',
+  bgSoft: '#0F1220',
+  card: '#15192A',
+  cardSoft: '#1A2035',
+  border: '#2A3150',
+  text: '#F5F3FF',
+  muted: '#A8AEC5',
+  violet: '#8B5CF6',
+  indigo: '#6366F1',
+  cyan: '#67E8F9',
+  green: '#86EFAC',
+  amber: '#FCD34D',
+  rose: '#FDA4AF',
+};
