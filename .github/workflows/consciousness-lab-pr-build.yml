@@ -11,9 +11,10 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     env:
       CI: '1'
+      NODE_ENV: production
     defaults:
       run:
         working-directory: projects/quantum-consciousness-lab
@@ -32,10 +33,10 @@ jobs:
           java-version: '17'
       - name: Android SDK
         uses: android-actions/setup-android@v3
-      - name: Install Android toolchain
+      - name: Install Android toolchain and emulator
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "emulator" "system-images;android-35;google_apis;x86_64"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Core behavior tests
@@ -46,24 +47,70 @@ jobs:
         run: npm run typecheck
       - name: Generate Android project
         run: npx expo prebuild --platform android --clean --no-install
-      - name: Build ARM64 standalone release APK
-        run: cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Show generated React host configuration
+        run: |
+          find android/app/src/main/java -name 'MainApplication.kt' -print -exec sed -n '1,220p' {} \;
+      - name: Build universal standalone release APK
+        run: cd android && ./gradlew assembleRelease --no-daemon
       - name: Verify standalone JavaScript bundle is packaged
         run: unzip -l android/app/build/outputs/apk/release/app-release.apk | grep -q 'assets/index.android.bundle'
       - name: Verify APK is signed
         run: "$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose android/app/build/outputs/apk/release/app-release.apk"
+      - name: Create Android emulator
+        run: |
+          echo no | avdmanager create avd --force --name consciousness_ci --package "system-images;android-35;google_apis;x86_64" --device "pixel_6"
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm || true; fi
+      - name: Boot Android emulator
+        run: |
+          nohup "$ANDROID_HOME/emulator/emulator" -avd consciousness_ci -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics > /tmp/consciousness-emulator.log 2>&1 &
+          adb wait-for-device
+          for i in $(seq 1 90); do
+            if [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+      - name: Install and launch exact APK
+        run: |
+          adb install -r android/app/build/outputs/apk/release/app-release.apk
+          adb logcat -c
+          adb shell am force-stop com.merg357.consciousnesslab
+          adb shell monkey -p com.merg357.consciousnesslab -c android.intent.category.LAUNCHER 1
+          sleep 12
+          adb exec-out screencap -p > android-smoke.png
+          adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+          adb pull /sdcard/window.xml android-window.xml >/dev/null 2>&1 || true
+          adb logcat -d > android-logcat.txt
+          echo '=== visible UI ==='
+          cat android-window.xml || true
+          echo '=== relevant logcat ==='
+          grep -Ei 'Unable to load script|FATAL EXCEPTION|ReactNativeJS|ReactHost|JSBundle|Hermes' android-logcat.txt | tail -200 || true
+          if grep -qi 'Unable to load script' android-window.xml android-logcat.txt; then
+            echo 'Standalone launch regression reproduced: Unable to load script'
+            exit 1
+          fi
+          if grep -q 'FATAL EXCEPTION' android-logcat.txt; then
+            echo 'Android fatal exception detected during launch'
+            exit 1
+          fi
+          adb shell pidof com.merg357.consciousnesslab
       - name: Stage and verify APK
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk ConsciousnessLab-v0.1.1-arm64-standalone.apk
-          test -s ConsciousnessLab-v0.1.1-arm64-standalone.apk
-          sha256sum ConsciousnessLab-v0.1.1-arm64-standalone.apk | tee ConsciousnessLab-v0.1.1-arm64-standalone.sha256
-          ls -lh ConsciousnessLab-v0.1.1-arm64-standalone.apk
-      - name: Upload APK artifact
+          cp android/app/build/outputs/apk/release/app-release.apk ConsciousnessLab-v0.1.2-universal-standalone.apk
+          test -s ConsciousnessLab-v0.1.2-universal-standalone.apk
+          sha256sum ConsciousnessLab-v0.1.2-universal-standalone.apk | tee ConsciousnessLab-v0.1.2-universal-standalone.sha256
+          ls -lh ConsciousnessLab-v0.1.2-universal-standalone.apk
+      - name: Upload APK and launch evidence
         uses: actions/upload-artifact@v4
         with:
-          name: ConsciousnessLab-v0.1.1-arm64-standalone
+          name: ConsciousnessLab-v0.1.2-universal-standalone
           path: |
-            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.1-arm64-standalone.apk
-            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.1-arm64-standalone.sha256
+            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.apk
+            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.sha256
+            projects/quantum-consciousness-lab/android-smoke.png
+            projects/quantum-consciousness-lab/android-window.xml
+            projects/quantum-consciousness-lab/android-logcat.txt
           if-no-files-found: error
           retention-days: 30
