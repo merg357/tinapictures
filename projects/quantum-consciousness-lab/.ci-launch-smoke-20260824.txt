@@ -1,0 +1,1 @@
+Run on-device-style Android emulator launch verification for the packaged standalone APK.
