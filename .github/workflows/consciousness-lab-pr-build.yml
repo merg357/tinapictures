@@ -86,25 +86,24 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot
           script: |
-            cd projects/quantum-consciousness-lab
-            adb install -r ConsciousnessLab-v0.1.2-universal-standalone.apk
+            adb install -r projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.apk
             adb logcat -c
             adb shell am force-stop com.merg357.consciousnesslab
             adb shell monkey -p com.merg357.consciousnesslab -c android.intent.category.LAUNCHER 1
             sleep 12
-            adb exec-out screencap -p > android-smoke.png
+            adb exec-out screencap -p > projects/quantum-consciousness-lab/android-smoke.png
             adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
-            adb pull /sdcard/window.xml android-window.xml >/dev/null 2>&1 || true
-            adb logcat -d > android-logcat.txt
+            adb pull /sdcard/window.xml projects/quantum-consciousness-lab/android-window.xml >/dev/null 2>&1 || true
+            adb logcat -d > projects/quantum-consciousness-lab/android-logcat.txt
             echo '=== visible UI ==='
-            cat android-window.xml || true
+            cat projects/quantum-consciousness-lab/android-window.xml || true
             echo '=== relevant logcat ==='
-            grep -Ei 'Unable to load script|FATAL EXCEPTION|ReactNativeJS|ReactHost|JSBundle|Hermes' android-logcat.txt | tail -250 || true
-            if grep -qi 'Unable to load script' android-window.xml android-logcat.txt; then
+            grep -Ei 'Unable to load script|FATAL EXCEPTION|ReactNativeJS|ReactHost|JSBundle|Hermes' projects/quantum-consciousness-lab/android-logcat.txt | tail -250 || true
+            if grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-window.xml projects/quantum-consciousness-lab/android-logcat.txt; then
               echo 'Standalone launch regression reproduced: Unable to load script'
               exit 1
             fi
-            if grep -q 'FATAL EXCEPTION' android-logcat.txt; then
+            if grep -q 'FATAL EXCEPTION' projects/quantum-consciousness-lab/android-logcat.txt; then
               echo 'Android fatal exception detected during launch'
               exit 1
             fi
