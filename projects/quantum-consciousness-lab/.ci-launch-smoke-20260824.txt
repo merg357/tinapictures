@@ -1,1 +1,2 @@
 Run on-device-style Android emulator launch verification for the packaged standalone APK.
+Reliable emulator runner attempt 2.
