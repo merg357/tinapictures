@@ -1,1 +1,1 @@
-Consciousness Lab v0.1 Android verification trigger — 2026-08-24
+Consciousness Lab v0.1 ARM64 Android verification trigger — 2026-08-24
