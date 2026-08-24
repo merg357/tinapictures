@@ -4,7 +4,6 @@
     "slug": "consciousness-lab",
     "version": "0.1.0",
     "orientation": "portrait",
-    "newArchEnabled": true,
     "android": {
       "package": "com.merg357.consciousnesslab",
       "versionCode": 1
