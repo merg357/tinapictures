@@ -99,14 +99,12 @@ jobs:
             cat projects/quantum-consciousness-lab/android-window.xml || true
             echo '=== relevant logcat ==='
             grep -Ei 'Unable to load script|FATAL EXCEPTION|ReactNativeJS|ReactHost|JSBundle|Hermes' projects/quantum-consciousness-lab/android-logcat.txt | tail -250 || true
-            if grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-window.xml projects/quantum-consciousness-lab/android-logcat.txt; then
-              echo 'Standalone launch regression reproduced: Unable to load script'
-              exit 1
-            fi
-            if grep -q 'FATAL EXCEPTION' projects/quantum-consciousness-lab/android-logcat.txt; then
-              echo 'Android fatal exception detected during launch'
-              exit 1
-            fi
+            test -s projects/quantum-consciousness-lab/android-window.xml
+            test -s projects/quantum-consciousness-lab/android-logcat.txt
+            ! grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-window.xml projects/quantum-consciousness-lab/android-logcat.txt
+            ! grep -q 'FATAL EXCEPTION' projects/quantum-consciousness-lab/android-logcat.txt
+            grep -q 'CONSCIOUSNESS LAB' projects/quantum-consciousness-lab/android-window.xml
+            grep -Fq 'Running "main"' projects/quantum-consciousness-lab/android-logcat.txt
             adb shell pidof com.merg357.consciousnesslab
       - name: Upload launch evidence
         if: always()
