@@ -48,6 +48,8 @@ jobs:
         run: npx expo prebuild --platform android --clean --no-install
       - name: Build ARM64 debug APK
         run: cd android && ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Verify standalone JavaScript bundle is packaged
+        run: unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/index.android.bundle'
       - name: Stage and verify APK
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk ConsciousnessLab-v0.1.0-arm64-debug.apk
