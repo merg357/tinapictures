@@ -49,3 +49,27 @@ test('normalizes unsupported duration to nearest supported duration', () => {
   assert.equal(plan.minutes, 15);
   assert.equal(totalMinutes(plan), 15);
 });
+
+
+test('v0.4 routes twelve expanded practice intents with explicit evidence labels', () => {
+  const cases = [
+    ['spacious-awareness', 'open spacious awareness and sense the space around my body', 'Emerging'],
+    ['breaking-pattern', 'break an old pattern and interrupt my automatic reaction', 'Supported'],
+    ['heart-coherence', 'heart focused breathing and coherence', 'Supported'],
+    ['future-self', 'rehearse my future self identity', 'Supported'],
+    ['energy-centers', 'energy center journey through the body', 'Spiritual / Experiential'],
+    ['new-potentials', 'tune in to new possibilities and potential', 'Theoretical'],
+    ['walking-embodiment', 'walking meditation embody my new self', 'Supported'],
+    ['gratitude-receiving', 'gratitude and receiving practice', 'Supported'],
+    ['deep-sleep-integration', 'sleep integration and overnight rest', 'Supported'],
+    ['abundance-identity', 'abundance identity and prosperity mindset', 'Supported'],
+    ['purpose-direction', 'purpose and direction for my next step', 'Supported'],
+    ['stress-stillness', 'stress to stillness right now', 'Supported'],
+  ];
+  for (const [pathId, intent, evidence] of cases) {
+    const plan = composeSession({ intent, goal: '', minutes: 10, lens: 'full' });
+    assert.equal(plan.pathId, pathId, intent);
+    assert.equal(plan.evidence, evidence, intent);
+    assert.equal(totalMinutes(plan), 10);
+  }
+});

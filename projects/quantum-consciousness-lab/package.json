@@ -1,28 +1,32 @@
 {
-  "name": "consciousness-lab",
-  "version": "0.3.0",
-  "private": true,
-  "main": "node_modules/expo/AppEntry.js",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "test": "node --test src/core/*.test.js",
-    "typecheck": "tsc --noEmit",
-    "doctor": "expo-doctor"
-  },
-  "dependencies": {
-    "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~57.0.9",
-    "expo-asset": "~57.0.12",
-    "expo-audio": "~57.0.3",
-    "expo-haptics": "~57.0.1",
-    "expo-linear-gradient": "~57.0.1",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.2"
-  },
-  "devDependencies": {
-    "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
-  }
+    "name":  "consciousness-lab",
+    "version":  "0.4.0",
+    "private":  true,
+    "main":  "node_modules/expo/AppEntry.js",
+    "scripts":  {
+                    "start":  "expo start",
+                    "android":  "expo run:android",
+                    "test":  "node --test src/core/*.test.js",
+                    "typecheck":  "tsc --noEmit",
+                    "doctor":  "expo-doctor",
+                    "generate:sounds":  "python scripts/generate_sound_assets.py",
+                    "generate:affirmations":  "python scripts/generate_affirmation_audio.py \u0026\u0026 python scripts/generate_affirmation_manifest.py"
+                },
+    "dependencies":  {
+                         "@react-native-async-storage/async-storage":  "2.2.0",
+                         "expo":  "~57.0.9",
+                         "expo-asset":  "~57.0.12",
+                         "expo-audio":  "~57.0.3",
+                         "expo-haptics":  "~57.0.1",
+                         "expo-linear-gradient":  "~57.0.1",
+                         "expo-status-bar":  "~57.0.1",
+                         "react":  "19.2.3",
+                         "react-native":  "0.86.2",
+                         "expo-crypto":  "~57.0.2",
+                         "expo-file-system":  "~57.0.5"
+                     },
+    "devDependencies":  {
+                            "@types/react":  "~19.2.2",
+                            "typescript":  "~6.0.3"
+                        }
 }

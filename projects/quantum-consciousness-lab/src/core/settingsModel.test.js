@@ -16,3 +16,12 @@ test('saving lens preserves an existing narrator', () => {
     lens: 'full',
   });
 });
+
+
+test('saving audio preserves narrator and lens while replacing only audio settings', () => {
+  const current = { lens: 'science', narrator: 'male', audio: { backgroundTrackId: 'rain' } };
+  const next = mergeSettings(current, { audio: { backgroundTrackId: 'ocean' } });
+  assert.equal(next.lens, 'science');
+  assert.equal(next.narrator, 'male');
+  assert.deepEqual(next.audio, { backgroundTrackId: 'ocean' });
+});
