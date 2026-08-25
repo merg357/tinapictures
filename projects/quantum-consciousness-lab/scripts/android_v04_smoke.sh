@@ -150,7 +150,15 @@ sleep 1
 scroll_top
 pull_ui /sdcard/v04-challenge-complete.xml "$ROOT/android-v04-challenge-complete.xml"
 grep -q '1/32 complete' "$ROOT/android-v04-challenge-complete.xml"
-tap_label "$ROOT/android-v04-challenge-complete.xml" 'Close 32-Day Rewire'
+# Relaunch after Day 1 completion so the next stage is independent of Challenge ScrollView position.
+# This also verifies Day 1 progress survives process restart.
+adb shell am force-stop "$APP_ID"
+sleep 1
+adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null
+sleep 7
+pull_ui /sdcard/v04-post-challenge-relaunch.xml "$ROOT/android-v04-post-challenge-relaunch.xml"
+grep -q 'Practice' "$ROOT/android-v04-post-challenge-relaunch.xml"
+tap_label "$ROOT/android-v04-post-challenge-relaunch.xml" 'Practice'
 sleep 2
 
 stage layered-meditation
