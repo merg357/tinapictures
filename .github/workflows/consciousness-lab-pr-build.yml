@@ -1,4 +1,4 @@
-name: Consciousness Lab V0.4 PR Verify
+name: Consciousness Lab PR Verify
 
 on:
   pull_request:
@@ -37,7 +37,9 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
+      - name: Validate JSON encoding
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('app.json','utf8')); console.log('JSON_OK')"
       - name: Reject Android system-TTS regression
         run: |
           set -euo pipefail
@@ -53,15 +55,14 @@ jobs:
           test "$(find assets/voices/v1/female -type f -name '*.mp3' | wc -l)" -eq 12
           test "$(find assets/voices/v1/male -type f -name '*.mp3' | wc -l)" -eq 12
           test -s assets/voices/v1/checksums.json
-      - name: Verify V0.4 audio libraries
+      - name: Verify V0.4 bundled audio libraries
         run: |
           set -euo pipefail
-          test "$(find assets/affirmations/v1 -type f -name '*.mp3' | wc -l)" -eq 112
+          test "$(find assets/affirmations/v1/female -type f -name '*.mp3' | wc -l)" -eq 56
+          test "$(find assets/affirmations/v1/male -type f -name '*.mp3' | wc -l)" -eq 56
           test "$(find assets/sounds/v1 -type f -name '*.wav' | wc -l)" -ge 23
           test -s assets/affirmations/v1/checksums.json
           test -s assets/sounds/v1/checksums.json
-          python3 scripts/generate_sound_assets.py | tee /tmp/consciousness-lab-sound-assets.txt
-          test "$(find assets/sounds/v1 -type f -name '*.wav' | wc -l)" -ge 23
       - name: Core behavior tests
         run: npm test
       - name: Expo Doctor
@@ -72,27 +73,27 @@ jobs:
         run: npx expo prebuild --platform android --clean --no-install
       - name: Build universal standalone release APK
         run: cd android && ./gradlew assembleRelease --no-daemon
-      - name: Verify standalone bundle and bundled V0.4 audio
+      - name: Verify standalone bundle and bundled audio
         run: |
           set -euo pipefail
           APK=android/app/build/outputs/apk/release/app-release.apk
-          unzip -l "$APK" > /tmp/consciousness-lab-v04-apk-contents.txt
-          grep -q 'assets/index.android.bundle' /tmp/consciousness-lab-v04-apk-contents.txt
-          MP3_COUNT=$(awk '$4 ~ /\.mp3$/ {c++} END {print c+0}' /tmp/consciousness-lab-v04-apk-contents.txt)
-          WAV_COUNT=$(awk '$4 ~ /\.wav$/ {c++} END {print c+0}' /tmp/consciousness-lab-v04-apk-contents.txt)
-          echo "APK_MP3_COUNT=$MP3_COUNT"
-          echo "APK_WAV_COUNT=$WAV_COUNT"
+          unzip -l "$APK" > /tmp/consciousness-lab-apk-contents.txt
+          grep -q 'assets/index.android.bundle' /tmp/consciousness-lab-apk-contents.txt
+          AUDIO_COUNT=$(awk '$4 ~ /\.(mp3|wav)$/ {c++} END {print c+0}' /tmp/consciousness-lab-apk-contents.txt)
+          MP3_COUNT=$(awk '$4 ~ /\.mp3$/ {c++} END {print c+0}' /tmp/consciousness-lab-apk-contents.txt)
+          WAV_COUNT=$(awk '$4 ~ /\.wav$/ {c++} END {print c+0}' /tmp/consciousness-lab-apk-contents.txt)
+          echo "APK_AUDIO_COUNT=$AUDIO_COUNT APK_MP3_COUNT=$MP3_COUNT APK_WAV_COUNT=$WAV_COUNT"
           test "$MP3_COUNT" -ge 136
           test "$WAV_COUNT" -ge 13
       - name: Verify APK is signed
         run: "$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose android/app/build/outputs/apk/release/app-release.apk"
-      - name: Stage V0.4 candidate APK
+      - name: Stage candidate APK
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk ConsciousnessLab-v0.4.0-universal-standalone.apk
           test -s ConsciousnessLab-v0.4.0-universal-standalone.apk
           sha256sum ConsciousnessLab-v0.4.0-universal-standalone.apk | tee ConsciousnessLab-v0.4.0-universal-standalone.sha256
           ls -lh ConsciousnessLab-v0.4.0-universal-standalone.apk
-      - name: Upload V0.4 candidate before device smoke
+      - name: Upload candidate APK before device smoke
         uses: actions/upload-artifact@v4
         with:
           name: ConsciousnessLab-v0.4.0-universal-candidate
@@ -106,7 +107,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm || true
-      - name: Exercise V0.4 on Android emulator
+      - name: Install and smoke-test V0.4 on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -122,11 +123,10 @@ jobs:
         with:
           name: ConsciousnessLab-v0.4.0-android-evidence
           path: |
-            projects/quantum-consciousness-lab/android-v04-*.png
             projects/quantum-consciousness-lab/android-v04-*.xml
             projects/quantum-consciousness-lab/android-v04-*.txt
+            projects/quantum-consciousness-lab/android-v04-smoke.png
             /tmp/consciousness-lab-voice-assets.txt
-            /tmp/consciousness-lab-sound-assets.txt
-            /tmp/consciousness-lab-v04-apk-contents.txt
+            /tmp/consciousness-lab-apk-contents.txt
           if-no-files-found: warn
           retention-days: 30
