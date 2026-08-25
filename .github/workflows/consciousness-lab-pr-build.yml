@@ -58,17 +58,17 @@ jobs:
         run: "$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose android/app/build/outputs/apk/release/app-release.apk"
       - name: Stage candidate APK
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk ConsciousnessLab-v0.1.2-universal-standalone.apk
-          test -s ConsciousnessLab-v0.1.2-universal-standalone.apk
-          sha256sum ConsciousnessLab-v0.1.2-universal-standalone.apk | tee ConsciousnessLab-v0.1.2-universal-standalone.sha256
-          ls -lh ConsciousnessLab-v0.1.2-universal-standalone.apk
+          cp android/app/build/outputs/apk/release/app-release.apk ConsciousnessLab-v0.2.0-universal-standalone.apk
+          test -s ConsciousnessLab-v0.2.0-universal-standalone.apk
+          sha256sum ConsciousnessLab-v0.2.0-universal-standalone.apk | tee ConsciousnessLab-v0.2.0-universal-standalone.sha256
+          ls -lh ConsciousnessLab-v0.2.0-universal-standalone.apk
       - name: Upload candidate APK before device smoke
         uses: actions/upload-artifact@v4
         with:
-          name: ConsciousnessLab-v0.1.2-universal-candidate
+          name: ConsciousnessLab-v0.2.0-universal-candidate
           path: |
-            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.apk
-            projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.sha256
+            projects/quantum-consciousness-lab/ConsciousnessLab-v0.2.0-universal-standalone.apk
+            projects/quantum-consciousness-lab/ConsciousnessLab-v0.2.0-universal-standalone.sha256
           if-no-files-found: error
           retention-days: 30
       - name: Enable KVM group access
@@ -76,7 +76,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm || true
-      - name: Install and launch exact APK on Android emulator
+      - name: Install, launch, and navigate exact APK on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -86,34 +86,46 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot
           script: |
-            adb install -r projects/quantum-consciousness-lab/ConsciousnessLab-v0.1.2-universal-standalone.apk
+            adb install -r projects/quantum-consciousness-lab/ConsciousnessLab-v0.2.0-universal-standalone.apk
             adb logcat -c
             adb shell am force-stop com.merg357.consciousnesslab
             adb shell monkey -p com.merg357.consciousnesslab -c android.intent.category.LAUNCHER 1
-            sleep 12
+            sleep 10
+            adb shell uiautomator dump /sdcard/onboarding.xml >/dev/null 2>&1
+            adb pull /sdcard/onboarding.xml projects/quantum-consciousness-lab/android-onboarding.xml >/dev/null 2>&1
+            grep -q 'Enter the Lab' projects/quantum-consciousness-lab/android-onboarding.xml
+            adb shell input tap $(python3 -c "import re; s=open('projects/quantum-consciousness-lab/android-onboarding.xml').read(); m=re.search(r'<node[^>]*text=\"Enter the Lab\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"',s); assert m; a,b,c,d=map(int,m.groups()); print((a+c)//2,(b+d)//2)")
+            sleep 4
+            adb shell uiautomator dump /sdcard/home.xml >/dev/null 2>&1
+            adb pull /sdcard/home.xml projects/quantum-consciousness-lab/android-home.xml >/dev/null 2>&1
+            grep -q 'How do you want to feel?' projects/quantum-consciousness-lab/android-home.xml
+            grep -q 'Home' projects/quantum-consciousness-lab/android-home.xml
+            grep -q 'Practice' projects/quantum-consciousness-lab/android-home.xml
+            grep -q 'Explore' projects/quantum-consciousness-lab/android-home.xml
+            grep -q 'Lab' projects/quantum-consciousness-lab/android-home.xml
+            grep -q 'Journal' projects/quantum-consciousness-lab/android-home.xml
+            adb shell input tap $(python3 -c "import re; s=open('projects/quantum-consciousness-lab/android-home.xml').read(); m=re.search(r'<node[^>]*text=\"Practice\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"',s); assert m; a,b,c,d=map(int,m.groups()); print((a+c)//2,(b+d)//2)")
+            sleep 3
+            adb shell uiautomator dump /sdcard/practice.xml >/dev/null 2>&1
+            adb pull /sdcard/practice.xml projects/quantum-consciousness-lab/android-practice.xml >/dev/null 2>&1
+            grep -q 'Choose a path' projects/quantum-consciousness-lab/android-practice.xml
+            grep -q 'Deep Rest' projects/quantum-consciousness-lab/android-practice.xml
             adb exec-out screencap -p > projects/quantum-consciousness-lab/android-smoke.png
-            adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
-            adb pull /sdcard/window.xml projects/quantum-consciousness-lab/android-window.xml >/dev/null 2>&1 || true
             adb logcat -d > projects/quantum-consciousness-lab/android-logcat.txt
-            echo '=== visible UI ==='
-            cat projects/quantum-consciousness-lab/android-window.xml || true
-            echo '=== relevant logcat ==='
-            grep -Ei 'Unable to load script|FATAL EXCEPTION|ReactNativeJS|ReactHost|JSBundle|Hermes' projects/quantum-consciousness-lab/android-logcat.txt | tail -250 || true
-            test -s projects/quantum-consciousness-lab/android-window.xml
-            test -s projects/quantum-consciousness-lab/android-logcat.txt
-            ! grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-window.xml projects/quantum-consciousness-lab/android-logcat.txt
+            ! grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-onboarding.xml projects/quantum-consciousness-lab/android-home.xml projects/quantum-consciousness-lab/android-practice.xml projects/quantum-consciousness-lab/android-logcat.txt
             ! grep -q 'FATAL EXCEPTION' projects/quantum-consciousness-lab/android-logcat.txt
-            grep -q 'CONSCIOUSNESS LAB' projects/quantum-consciousness-lab/android-window.xml
             grep -Fq 'Running "main"' projects/quantum-consciousness-lab/android-logcat.txt
             adb shell pidof com.merg357.consciousnesslab
       - name: Upload launch evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ConsciousnessLab-v0.1.2-launch-evidence
+          name: ConsciousnessLab-v0.2.0-launch-evidence
           path: |
             projects/quantum-consciousness-lab/android-smoke.png
-            projects/quantum-consciousness-lab/android-window.xml
+            projects/quantum-consciousness-lab/android-onboarding.xml
+            projects/quantum-consciousness-lab/android-home.xml
+            projects/quantum-consciousness-lab/android-practice.xml
             projects/quantum-consciousness-lab/android-logcat.txt
           if-no-files-found: warn
           retention-days: 30
