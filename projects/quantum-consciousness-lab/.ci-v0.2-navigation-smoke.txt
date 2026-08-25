@@ -1,0 +1,1 @@
+Trigger full v0.2 Android onboarding and navigation smoke verification.
