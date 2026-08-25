@@ -9,20 +9,22 @@ import { ExploreScreen } from './src/screens/ExploreScreen';
 import { LabScreen } from './src/screens/LabScreen';
 import { JournalScreen } from './src/screens/JournalScreen';
 import { SessionScreen } from './src/screens/SessionScreen';
-import { loadLens, loadSessions, saveLens, saveSessions } from './src/lib/storage';
+import { loadLens, loadNarrator, loadSessions, saveLens, saveNarrator, saveSessions } from './src/lib/storage';
 import { COLORS } from './src/theme';
-import type { SessionPlan, SessionRecord, TabKey, UserLens } from './src/types';
+import type { NarratorId, SessionPlan, SessionRecord, TabKey, UserLens } from './src/types';
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [lens, setLens] = useState<UserLens | null>(null);
+  const [narrator, setNarrator] = useState<NarratorId>('female');
   const [tab, setTab] = useState<TabKey>('home');
   const [session, setSession] = useState<SessionPlan | null>(null);
   const [records, setRecords] = useState<SessionRecord[]>([]);
 
   useEffect(() => {
-    Promise.all([loadLens(), loadSessions()]).then(([savedLens, savedRecords]) => {
+    Promise.all([loadLens(), loadNarrator(), loadSessions()]).then(([savedLens, savedNarrator, savedRecords]) => {
       setLens(savedLens);
+      setNarrator(savedNarrator);
       setRecords(savedRecords);
       setReady(true);
     });
@@ -31,6 +33,11 @@ export default function App() {
   async function completeOnboarding(nextLens: UserLens) {
     await saveLens(nextLens);
     setLens(nextLens);
+  }
+
+  async function changeNarrator(nextNarrator: NarratorId) {
+    setNarrator(nextNarrator);
+    await saveNarrator(nextNarrator);
   }
 
   async function completeSession(record: SessionRecord) {
@@ -43,7 +50,7 @@ export default function App() {
 
   if (!ready) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg }}><StatusBar style="light" /><ActivityIndicator color={COLORS.cyan} /></View>;
   if (!lens) return <><StatusBar style="light" /><OnboardingScreen onComplete={completeOnboarding} /></>;
-  if (session) return <><StatusBar style="light" /><SessionScreen plan={session} onExit={() => setSession(null)} onComplete={completeSession} /></>;
+  if (session) return <><StatusBar style="light" /><SessionScreen plan={session} narrator={narrator} onNarratorChange={changeNarrator} onExit={() => setSession(null)} onComplete={completeSession} /></>;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}>
