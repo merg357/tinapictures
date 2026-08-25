@@ -5,6 +5,20 @@ APK=projects/quantum-consciousness-lab/ConsciousnessLab-v0.3.0-universal-standal
 APP_ID=com.merg357.consciousnesslab
 ROOT=projects/quantum-consciousness-lab
 
+stage() {
+  echo "ANDROID_V03_STAGE $*"
+}
+
+capture_evidence() {
+  set +e
+  adb exec-out screencap -p > "$ROOT/android-smoke.png" 2>/dev/null
+  adb logcat -d > "$ROOT/android-logcat.txt" 2>/dev/null
+  adb shell dumpsys audio > "$ROOT/android-audio.txt" 2>/dev/null
+  set -e
+}
+
+trap capture_evidence EXIT
+
 pull_ui() {
   local remote="$1"
   local local_file="$2"
@@ -48,17 +62,20 @@ PY
   adb shell input tap "$x" "$y"
 }
 
+stage install
 adb install -r "$APK"
 adb logcat -c
 adb shell am force-stop "$APP_ID"
 adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 10
 
+stage onboarding
 pull_ui /sdcard/onboarding.xml "$ROOT/android-onboarding.xml"
 grep -q 'Enter the Lab' "$ROOT/android-onboarding.xml"
 tap_label "$ROOT/android-onboarding.xml" 'Enter the Lab'
 sleep 4
 
+stage home
 pull_ui /sdcard/home.xml "$ROOT/android-home.xml"
 grep -q 'How do you want to feel?' "$ROOT/android-home.xml"
 for tab in Home Practice Explore Lab Journal; do
@@ -67,12 +84,14 @@ done
 tap_label "$ROOT/android-home.xml" 'Practice'
 sleep 3
 
+stage practice
 pull_ui /sdcard/practice.xml "$ROOT/android-practice.xml"
 grep -q 'Choose a path' "$ROOT/android-practice.xml"
 grep -q 'Deep Rest' "$ROOT/android-practice.xml"
 tap_label "$ROOT/android-practice.xml" 'Start Deep Rest'
 sleep 3
 
+stage narrator
 pull_ui /sdcard/session-before.xml "$ROOT/android-session-before.xml"
 grep -q 'Warm Female' "$ROOT/android-session-before.xml"
 grep -q 'Deep Male' "$ROOT/android-session-before.xml"
@@ -80,20 +99,27 @@ grep -q 'Android system TTS is not used' "$ROOT/android-session-before.xml"
 tap_label "$ROOT/android-session-before.xml" 'Narrator Deep Male'
 sleep 2
 
+stage preview
 pull_ui /sdcard/session-preview.xml "$ROOT/android-session-preview.xml"
-grep -q 'Natural narration' "$ROOT/android-session-preview.xml"
+grep -q 'Natural narration · playing' "$ROOT/android-session-preview.xml"
 tap_label "$ROOT/android-session-preview.xml" 'Start Deep Rest'
 sleep 4
 
-pull_ui /sdcard/session-running.xml "$ROOT/android-session-running.xml"
-grep -q 'Natural narration · playing' "$ROOT/android-session-running.xml"
-grep -q 'Voice: Deep Male' "$ROOT/android-session-running.xml"
+stage meditation-audio
+APP_PID=$(adb shell pidof "$APP_ID" | tr -d '\r' | awk '{print $1}')
+APP_UID=$(adb shell dumpsys package "$APP_ID" | sed -n 's/.*userId=\([0-9][0-9]*\).*/\1/p' | head -n 1 | tr -d '\r')
+test -n "$APP_PID"
+test -n "$APP_UID"
+adb shell dumpsys audio > "$ROOT/android-audio.txt"
+grep -Eq "AudioPlaybackConfiguration .*u/pid:${APP_UID}/${APP_PID} state:started" "$ROOT/android-audio.txt"
+echo "ANDROID_V03_AUDIO_ACTIVE uid=$APP_UID pid=$APP_PID"
 
-adb exec-out screencap -p > "$ROOT/android-smoke.png"
-adb logcat -d > "$ROOT/android-logcat.txt"
+capture_evidence
 ! grep -qi 'Unable to load script' "$ROOT"/android-*.xml "$ROOT/android-logcat.txt"
 ! grep -q 'FATAL EXCEPTION' "$ROOT/android-logcat.txt"
 grep -Fq 'Running "main"' "$ROOT/android-logcat.txt"
 adb shell pidof "$APP_ID" >/dev/null
 
+trap - EXIT
+stage complete
 echo 'ANDROID_V03_SMOKE_OK'
