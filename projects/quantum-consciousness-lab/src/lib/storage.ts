@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ExperimentRecord, JournalEntry, SessionRecord, UserLens } from '../types';
+import type { ExperimentRecord, JournalEntry, NarratorId, SessionRecord, UserLens } from '../types';
+
+const { mergeSettings } = require('../core/settingsModel') as {
+  mergeSettings: (current: Settings, patch: Partial<Settings>) => Settings;
+};
+
+type Settings = { lens?: UserLens; narrator?: NarratorId };
 
 const SETTINGS_KEY = 'cl.settings.v2';
 const JOURNAL_KEY = 'cl.journal.v1';
@@ -19,13 +25,27 @@ async function writeJson<T>(key: string, value: T): Promise<void> {
   await AsyncStorage.setItem(key, JSON.stringify(value));
 }
 
+async function patchSettings(patch: Partial<Settings>): Promise<void> {
+  const current = await readJson<Settings>(SETTINGS_KEY, {});
+  await writeJson(SETTINGS_KEY, mergeSettings(current, patch));
+}
+
 export async function loadLens(): Promise<UserLens | null> {
-  const settings = await readJson<{ lens?: UserLens }>(SETTINGS_KEY, {});
+  const settings = await readJson<Settings>(SETTINGS_KEY, {});
   return settings.lens ?? null;
 }
 
 export async function saveLens(lens: UserLens): Promise<void> {
-  await writeJson(SETTINGS_KEY, { lens });
+  await patchSettings({ lens });
+}
+
+export async function loadNarrator(): Promise<NarratorId> {
+  const settings = await readJson<Settings>(SETTINGS_KEY, {});
+  return settings.narrator === 'male' ? 'male' : 'female';
+}
+
+export async function saveNarrator(narrator: NarratorId): Promise<void> {
+  await patchSettings({ narrator });
 }
 
 export const loadJournal = () => readJson<JournalEntry[]>(JOURNAL_KEY, []);
