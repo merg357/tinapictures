@@ -29,3 +29,13 @@ test('experiment records calculate subjective change without claiming causation'
   assert.equal(record.after, 5);
   assert.match(record.note, /personal observation/i);
 });
+
+
+test('v0.4 exposes soundscapes, affirmation studio, and the 32-day challenge as first-class practice tools', () => {
+  const { V04_TOOLS } = require('./appModel');
+  assert.deepEqual(V04_TOOLS.map((item) => item.id), ['sounds', 'affirmations', 'challenge']);
+  for (const tool of V04_TOOLS) {
+    assert.ok(tool.title);
+    assert.ok(tool.subtitle);
+  }
+});

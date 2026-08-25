@@ -1,29 +1,16 @@
 import type { NarratorId } from '../types';
 
 export const PRACTICE_IDS = [
-  'observer',
-  'coherence',
-  'deep-rest',
-  'intention',
-  'quantum-foundations',
-  'expanded-consciousness',
-  'synchronicity-dreams',
+  'observer','coherence','deep-rest','intention','quantum-foundations','expanded-consciousness','synchronicity-dreams',
+  'spacious-awareness','breaking-pattern','heart-coherence','future-self','energy-centers','new-potentials',
+  'walking-embodiment','gratitude-receiving','deep-sleep-integration','abundance-identity','purpose-direction','stress-stillness',
 ] as const;
 
 export type VoicePracticeId = (typeof PRACTICE_IDS)[number];
 export type VoiceAssetKey =
-  | 'arrive'
-  | 'regulate'
-  | 'open'
-  | 'closing'
-  | 'drift'
-  | 'observer-focus'
-  | 'coherence-focus'
-  | 'deep-rest-focus'
-  | 'intention-focus'
-  | 'quantum-foundations-focus'
-  | 'expanded-consciousness-focus'
-  | 'synchronicity-dreams-focus';
+  | 'arrive' | 'regulate' | 'open' | 'closing' | 'drift'
+  | 'observer-focus' | 'coherence-focus' | 'deep-rest-focus' | 'intention-focus'
+  | 'quantum-foundations-focus' | 'expanded-consciousness-focus' | 'synchronicity-dreams-focus';
 
 const ASSETS: Record<NarratorId, Record<VoiceAssetKey, number>> = {
   female: {
@@ -56,20 +43,40 @@ const ASSETS: Record<NarratorId, Record<VoiceAssetKey, number>> = {
   },
 };
 
+const FOCUS_ALIAS: Record<VoicePracticeId, VoiceAssetKey> = {
+  observer: 'observer-focus',
+  coherence: 'coherence-focus',
+  'deep-rest': 'deep-rest-focus',
+  intention: 'intention-focus',
+  'quantum-foundations': 'quantum-foundations-focus',
+  'expanded-consciousness': 'expanded-consciousness-focus',
+  'synchronicity-dreams': 'synchronicity-dreams-focus',
+  'spacious-awareness': 'expanded-consciousness-focus',
+  'breaking-pattern': 'observer-focus',
+  'heart-coherence': 'coherence-focus',
+  'future-self': 'intention-focus',
+  'energy-centers': 'coherence-focus',
+  'new-potentials': 'intention-focus',
+  'walking-embodiment': 'intention-focus',
+  'gratitude-receiving': 'coherence-focus',
+  'deep-sleep-integration': 'deep-rest-focus',
+  'abundance-identity': 'intention-focus',
+  'purpose-direction': 'intention-focus',
+  'stress-stillness': 'observer-focus',
+};
+
 function assertPracticeId(value: string): asserts value is VoicePracticeId {
   if (!(PRACTICE_IDS as readonly string[]).includes(value)) throw new Error(`Missing neural narration for practice: ${value}`);
 }
 
 export function assetKeyForPhase(practiceId: string, segmentIndex: number): VoiceAssetKey {
   assertPracticeId(practiceId);
-  if (!Number.isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex > 4) {
-    throw new Error(`Missing neural narration phase: ${practiceId}/${segmentIndex}`);
-  }
+  if (!Number.isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex > 4) throw new Error(`Missing neural narration phase: ${practiceId}/${segmentIndex}`);
   if (segmentIndex === 0) return 'arrive';
   if (segmentIndex === 1) return 'regulate';
-  if (segmentIndex === 2) return `${practiceId}-focus` as VoiceAssetKey;
+  if (segmentIndex === 2) return FOCUS_ALIAS[practiceId];
   if (segmentIndex === 3) return 'open';
-  return practiceId === 'deep-rest' ? 'drift' : 'closing';
+  return practiceId === 'deep-rest' || practiceId === 'deep-sleep-integration' ? 'drift' : 'closing';
 }
 
 export function resolveVoiceAsset(practiceId: string, segmentIndex: number, narratorId: NarratorId): number {
@@ -83,7 +90,4 @@ export function resolvePreviewAsset(narratorId: NarratorId): number {
   return ASSETS[narratorId]['coherence-focus'];
 }
 
-export const NARRATOR_LABELS: Record<NarratorId, string> = {
-  female: 'Warm Female',
-  male: 'Deep Male',
-};
+export const NARRATOR_LABELS: Record<NarratorId, string> = { female: 'Warm Female', male: 'Deep Male' };

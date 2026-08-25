@@ -14,6 +14,7 @@ type Options = {
   reflecting: boolean;
   finished: boolean;
   minimalGuidance: boolean;
+  narrationVolume?: number;
 };
 
 export function useMeditationPlayer(options: Options) {
@@ -34,6 +35,10 @@ export function useMeditationPlayer(options: Options) {
       setState('error');
     });
   }, []);
+
+  useEffect(() => {
+    player.volume = Math.max(0, Math.min(1, options.narrationVolume ?? 1));
+  }, [options.narrationVolume, player]);
 
   useEffect(() => {
     if (status.didJustFinish && state === 'playing') setState('silence');
@@ -140,5 +145,12 @@ export function useMeditationPlayer(options: Options) {
     setState('idle');
   }, [player]);
 
-  return { state, error, preview, stop, status };
+  return {
+    state,
+    error,
+    preview,
+    stop,
+    status,
+    isNarrating: options.started && state === 'playing' && status.playing,
+  };
 }

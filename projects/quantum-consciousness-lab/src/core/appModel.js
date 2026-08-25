@@ -49,6 +49,12 @@ const FLAGSHIP_PATHS = [
   },
 ];
 
+const V04_TOOLS = [
+  { id: 'sounds', title: 'Soundscapes & Frequencies', subtitle: 'Mix meditation music, nature, breathing pulse, and optional frequency layers.' },
+  { id: 'affirmations', title: 'Affirmation Studio', subtitle: 'Build natural-voice affirmation sessions with categories, styles, favorites, and private custom statements.' },
+  { id: 'challenge', title: '32-Day Rewire', subtitle: 'Follow four eight-day phases with morning practice, a midday reset, and evening integration.' },
+];
+
 function createJournalEntry({ category, text, now = Date.now() }) {
   const cleaned = String(text || '').trim();
   return {
@@ -73,4 +79,4 @@ function createExperimentRecord({ protocol, before, after, now = Date.now() }) {
   };
 }
 
-module.exports = { FLAGSHIP_PATHS, createJournalEntry, createExperimentRecord };
+module.exports = { FLAGSHIP_PATHS, V04_TOOLS, createJournalEntry, createExperimentRecord };

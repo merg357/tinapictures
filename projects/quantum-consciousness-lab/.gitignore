@@ -1,0 +1,8 @@
+﻿node_modules/
+android/
+.expo/
+*.apk
+*.sha256
+android-v04-*.xml
+android-v04-*.txt
+android-v04-*.png

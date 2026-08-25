@@ -1,0 +1,7 @@
+{
+  "provider": "Microsoft Edge neural voices via edge-tts",
+  "femaleVoice": "en-US-JennyNeural",
+  "maleVoice": "en-US-GuyNeural",
+  "files": 112,
+  "runtimeTtsRequired": false
+}
