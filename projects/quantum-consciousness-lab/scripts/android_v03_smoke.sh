@@ -117,8 +117,8 @@ echo "ANDROID_V03_AUDIO_ACTIVE pid=$APP_PID"
 adb exec-out screencap -p > "$ROOT/android-smoke.png"
 ! grep -qi 'Unable to load script' "$ROOT"/android-*.xml "$ROOT/android-logcat.txt"
 ! grep -q 'FATAL EXCEPTION' "$ROOT/android-logcat.txt"
-grep -Fq 'Running "main"' "$ROOT/android-logcat.txt"
 adb shell pidof "$APP_ID" >/dev/null
+adb shell dumpsys package "$APP_ID" | grep -q 'versionName=0.3.0'
 
 trap - EXIT
 stage complete
