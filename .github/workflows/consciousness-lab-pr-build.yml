@@ -116,7 +116,7 @@ jobs:
             projects/quantum-consciousness-lab/android-practice.xml
             projects/quantum-consciousness-lab/android-session-before.xml
             projects/quantum-consciousness-lab/android-session-preview.xml
-            projects/quantum-consciousness-lab/android-session-running.xml
+            projects/quantum-consciousness-lab/android-audio.txt
             projects/quantum-consciousness-lab/android-logcat.txt
             /tmp/consciousness-lab-voice-assets.txt
             /tmp/consciousness-lab-apk-contents.txt
