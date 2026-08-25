@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ExperimentRecord, JournalEntry, UserLens } from '../types';
+import type { ExperimentRecord, JournalEntry, SessionRecord, UserLens } from '../types';
 
-const SETTINGS_KEY = 'cl.settings.v1';
+const SETTINGS_KEY = 'cl.settings.v2';
 const JOURNAL_KEY = 'cl.journal.v1';
 const EXPERIMENTS_KEY = 'cl.experiments.v1';
+const SESSIONS_KEY = 'cl.sessions.v2';
 
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
@@ -31,3 +32,5 @@ export const loadJournal = () => readJson<JournalEntry[]>(JOURNAL_KEY, []);
 export const saveJournal = (entries: JournalEntry[]) => writeJson(JOURNAL_KEY, entries);
 export const loadExperiments = () => readJson<ExperimentRecord[]>(EXPERIMENTS_KEY, []);
 export const saveExperiments = (entries: ExperimentRecord[]) => writeJson(EXPERIMENTS_KEY, entries);
+export const loadSessions = () => readJson<SessionRecord[]>(SESSIONS_KEY, []);
+export const saveSessions = (entries: SessionRecord[]) => writeJson(SESSIONS_KEY, entries.slice(0, 500));
