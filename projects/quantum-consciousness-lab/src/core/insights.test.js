@@ -1,8 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { NAV_ITEMS, computeStats, recommendPractice, pickBestVoice } = require('./insights');
+const insights = require('./insights');
+const { NAV_ITEMS, computeStats, recommendPractice } = insights;
 
-test('v0.2 navigation exposes five simple destinations', () => {
+test('navigation exposes five simple destinations', () => {
   assert.deepEqual(NAV_ITEMS.map((item) => item.key), ['home', 'practice', 'explore', 'lab', 'journal']);
 });
 
@@ -26,11 +27,6 @@ test('recommendPractice routes immediate needs without a content maze', () => {
   assert.equal(recommendPractice('I want to visualize a goal').pathId, 'intention');
 });
 
-test('pickBestVoice prefers enhanced English voices and avoids novelty voices', () => {
-  const voice = pickBestVoice([
-    { identifier: 'robot', name: 'English novelty robot', language: 'en-US', quality: 'Default' },
-    { identifier: 'natural', name: 'English US Neural 2', language: 'en-US', quality: 'Enhanced' },
-    { identifier: 'other', name: 'French', language: 'fr-FR', quality: 'Enhanced' },
-  ]);
-  assert.equal(voice.identifier, 'natural');
+test('v0.3 removes legacy device voice selection from the meditation model', () => {
+  assert.equal(insights.pickBestVoice, undefined);
 });
