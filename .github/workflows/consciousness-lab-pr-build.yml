@@ -103,64 +103,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot
-          script: |
-            set -eu
-            APK=projects/quantum-consciousness-lab/ConsciousnessLab-v0.3.0-universal-standalone.apk
-            tap_label() {
-              XML="$1" LABEL="$2" python3 - <<'PY'
-            import os,re
-            s=open(os.environ['XML'], encoding='utf-8').read()
-            label=re.escape(os.environ['LABEL'])
-            m=re.search(r'<node[^>]*(?:text|content-desc)="'+label+r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',s)
-            if not m:
-                raise SystemExit('label not found: '+os.environ['LABEL'])
-            a,b,c,d=map(int,m.groups()); print((a+c)//2,(b+d)//2)
-            PY
-            }
-            adb install -r "$APK"
-            adb logcat -c
-            adb shell am force-stop com.merg357.consciousnesslab
-            adb shell monkey -p com.merg357.consciousnesslab -c android.intent.category.LAUNCHER 1
-            sleep 10
-            adb shell uiautomator dump /sdcard/onboarding.xml >/dev/null 2>&1
-            adb pull /sdcard/onboarding.xml projects/quantum-consciousness-lab/android-onboarding.xml >/dev/null 2>&1
-            grep -q 'Enter the Lab' projects/quantum-consciousness-lab/android-onboarding.xml
-            set -- $(tap_label projects/quantum-consciousness-lab/android-onboarding.xml 'Enter the Lab'); adb shell input tap "$1" "$2"
-            sleep 4
-            adb shell uiautomator dump /sdcard/home.xml >/dev/null 2>&1
-            adb pull /sdcard/home.xml projects/quantum-consciousness-lab/android-home.xml >/dev/null 2>&1
-            grep -q 'How do you want to feel?' projects/quantum-consciousness-lab/android-home.xml
-            for tab in Home Practice Explore Lab Journal; do grep -q "$tab" projects/quantum-consciousness-lab/android-home.xml; done
-            set -- $(tap_label projects/quantum-consciousness-lab/android-home.xml 'Practice'); adb shell input tap "$1" "$2"
-            sleep 3
-            adb shell uiautomator dump /sdcard/practice.xml >/dev/null 2>&1
-            adb pull /sdcard/practice.xml projects/quantum-consciousness-lab/android-practice.xml >/dev/null 2>&1
-            grep -q 'Choose a path' projects/quantum-consciousness-lab/android-practice.xml
-            grep -q 'Deep Rest' projects/quantum-consciousness-lab/android-practice.xml
-            set -- $(tap_label projects/quantum-consciousness-lab/android-practice.xml 'Start Deep Rest'); adb shell input tap "$1" "$2"
-            sleep 3
-            adb shell uiautomator dump /sdcard/session-before.xml >/dev/null 2>&1
-            adb pull /sdcard/session-before.xml projects/quantum-consciousness-lab/android-session-before.xml >/dev/null 2>&1
-            grep -q 'Warm Female' projects/quantum-consciousness-lab/android-session-before.xml
-            grep -q 'Deep Male' projects/quantum-consciousness-lab/android-session-before.xml
-            grep -q 'Android system TTS is not used' projects/quantum-consciousness-lab/android-session-before.xml
-            set -- $(tap_label projects/quantum-consciousness-lab/android-session-before.xml 'Narrator Deep Male'); adb shell input tap "$1" "$2"
-            sleep 2
-            adb shell uiautomator dump /sdcard/session-preview.xml >/dev/null 2>&1
-            adb pull /sdcard/session-preview.xml projects/quantum-consciousness-lab/android-session-preview.xml >/dev/null 2>&1
-            grep -q 'Natural narration' projects/quantum-consciousness-lab/android-session-preview.xml
-            set -- $(tap_label projects/quantum-consciousness-lab/android-session-preview.xml 'Start Deep Rest'); adb shell input tap "$1" "$2"
-            sleep 4
-            adb shell uiautomator dump /sdcard/session-running.xml >/dev/null 2>&1
-            adb pull /sdcard/session-running.xml projects/quantum-consciousness-lab/android-session-running.xml >/dev/null 2>&1
-            grep -q 'Natural narration · playing' projects/quantum-consciousness-lab/android-session-running.xml
-            grep -q 'Voice: Deep Male' projects/quantum-consciousness-lab/android-session-running.xml
-            adb exec-out screencap -p > projects/quantum-consciousness-lab/android-smoke.png
-            adb logcat -d > projects/quantum-consciousness-lab/android-logcat.txt
-            ! grep -qi 'Unable to load script' projects/quantum-consciousness-lab/android-*.xml projects/quantum-consciousness-lab/android-logcat.txt
-            ! grep -q 'FATAL EXCEPTION' projects/quantum-consciousness-lab/android-logcat.txt
-            grep -Fq 'Running "main"' projects/quantum-consciousness-lab/android-logcat.txt
-            adb shell pidof com.merg357.consciousnesslab
+          script: bash projects/quantum-consciousness-lab/scripts/android_v03_smoke.sh
       - name: Upload launch and voice evidence
         if: always()
         uses: actions/upload-artifact@v4
