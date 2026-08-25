@@ -1,5 +1,5 @@
 export type UserLens = 'science' | 'science-frontier' | 'full';
-export type TabKey = 'today' | 'explore' | 'lab' | 'journal';
+export type TabKey = 'home' | 'practice' | 'explore' | 'lab' | 'journal';
 export type EvidenceLevel = 'Established' | 'Supported' | 'Emerging' | 'Theoretical' | 'Philosophical' | 'Spiritual / Experiential';
 
 export interface SessionSegment {
@@ -21,6 +21,17 @@ export interface SessionPlan {
   intent: string;
   goal: string;
   segments: SessionSegment[];
+}
+
+export interface SessionRecord {
+  id: string;
+  pathId: string;
+  title: string;
+  minutes: number;
+  before: number;
+  after: number;
+  completed: boolean;
+  createdAt: number;
 }
 
 export interface JournalEntry {
