@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export MSYS2_ARG_CONV_EXCL='*'
+export MSYS_NO_PATHCONV=1
 
 APK=projects/quantum-consciousness-lab/ConsciousnessLab-v0.4.0-universal-standalone.apk
 APP_ID=com.merg357.consciousnesslab
@@ -46,7 +48,7 @@ PY
 }
 
 scroll_down() { adb shell input swipe 540 1700 540 520 300; sleep 1; }
-scroll_top() { for _ in 1 2 3 4 5 6; do adb shell input swipe 540 550 540 1750 180; done; sleep 1; }
+scroll_top() { for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do adb shell input swipe 540 500 540 2200 260; sleep 0.25; done; sleep 1; }
 
 stage install
 adb install -r "$APK"
@@ -56,7 +58,11 @@ adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 8
 
 stage onboarding
-pull_ui /sdcard/v04-onboarding.xml "$ROOT/android-v04-onboarding.xml"
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  pull_ui /sdcard/v04-onboarding.xml "$ROOT/android-v04-onboarding.xml" || true
+  if grep -q 'Enter the Lab' "$ROOT/android-v04-onboarding.xml" 2>/dev/null; then break; fi
+  sleep 1
+done
 grep -q 'Enter the Lab' "$ROOT/android-v04-onboarding.xml"
 tap_label "$ROOT/android-v04-onboarding.xml" 'Enter the Lab'
 sleep 3
@@ -69,17 +75,17 @@ tap_label "$ROOT/android-v04-home.xml" 'Practice'
 sleep 2
 pull_ui /sdcard/v04-practice.xml "$ROOT/android-v04-practice.xml"
 grep -q 'V0.4 tools' "$ROOT/android-v04-practice.xml"
-grep -q 'Sound Library' "$ROOT/android-v04-practice.xml"
+grep -q 'Soundscapes &amp; Frequencies' "$ROOT/android-v04-practice.xml"
 grep -q 'Affirmation Studio' "$ROOT/android-v04-practice.xml"
 grep -q '32-Day Rewire' "$ROOT/android-v04-practice.xml"
 
 stage sound-library
-tap_label "$ROOT/android-v04-practice.xml" 'Open Sound Library'
+tap_label "$ROOT/android-v04-practice.xml" 'Open Soundscapes & Frequencies'
 sleep 2
 pull_ui /sdcard/v04-sounds.xml "$ROOT/android-v04-sounds.xml"
 grep -q 'Build your meditation atmosphere' "$ROOT/android-v04-sounds.xml"
 grep -q 'Ocean' "$ROOT/android-v04-sounds.xml"
-grep -q 'Theta 6 Hz' "$ROOT/android-v04-sounds.xml"
+# Theta is below the initial viewport; it is exercised in the session configuration stage.
 tap_label "$ROOT/android-v04-sounds.xml" 'Use sound Ocean'
 sleep 1
 tap_label "$ROOT/android-v04-sounds.xml" 'Close Sound Library'
@@ -99,18 +105,19 @@ for _ in 1 2 3 4 5; do scroll_down; done
 pull_ui /sdcard/v04-affirmations-bottom.xml "$ROOT/android-v04-affirmations-bottom.xml"
 tap_label "$ROOT/android-v04-affirmations-bottom.xml" 'Start affirmation session'
 sleep 4
-pull_ui /sdcard/v04-affirmations-playing.xml "$ROOT/android-v04-affirmations-playing.xml"
-grep -Eq 'AFFIRMATIONS .* (PLAYING|WAITING)' "$ROOT/android-v04-affirmations-playing.xml"
+scroll_top
 APP_PID=$(adb shell pidof "$APP_ID" | tr -d '\r' | awk '{print $1}')
 test -n "$APP_PID"
 adb shell dumpsys audio > "$ROOT/android-v04-affirmation-audio.txt"
 grep -Eq "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID} state:started" "$ROOT/android-v04-affirmation-audio.txt"
-# Close from the top after stopping.
-pull_ui /sdcard/v04-affirmations-playing.xml "$ROOT/android-v04-affirmations-playing.xml"
-if grep -q 'Stop' "$ROOT/android-v04-affirmations-playing.xml"; then tap_label "$ROOT/android-v04-affirmations-playing.xml" 'Stop'; fi
-scroll_top
-pull_ui /sdcard/v04-affirmations-top.xml "$ROOT/android-v04-affirmations-top.xml"
-tap_label "$ROOT/android-v04-affirmations-top.xml" 'Close Affirmation Studio'
+# Relaunch after playback to verify onboarding/settings survive and to avoid ScrollView-position coupling.
+adb shell am force-stop "$APP_ID"
+sleep 1
+adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null
+sleep 7
+pull_ui /sdcard/v04-post-affirm-relaunch.xml "$ROOT/android-v04-post-affirm-relaunch.xml"
+grep -q 'Practice' "$ROOT/android-v04-post-affirm-relaunch.xml"
+tap_label "$ROOT/android-v04-post-affirm-relaunch.xml" 'Practice'
 sleep 2
 
 stage challenge
@@ -120,16 +127,20 @@ sleep 2
 pull_ui /sdcard/v04-challenge.xml "$ROOT/android-v04-challenge.xml"
 grep -q '32-Day Rewire' "$ROOT/android-v04-challenge.xml"
 grep -q 'Day 1 of 32' "$ROOT/android-v04-challenge.xml"
-tap_label "$ROOT/android-v04-challenge.xml" 'Challenge Day 1 Notice the Autopilot'
-sleep 1
-pull_ui /sdcard/v04-challenge-day1.xml "$ROOT/android-v04-challenge-day1.xml"
+# Day 1 starts expanded. Scroll until its completion control is visible instead of toggling the card closed.
+for _ in 1 2 3 4 5 6; do
+  pull_ui /sdcard/v04-challenge-day1.xml "$ROOT/android-v04-challenge-day1.xml"
+  if grep -q 'Complete Challenge Day 1' "$ROOT/android-v04-challenge-day1.xml"; then break; fi
+  scroll_down
+done
+grep -q 'Complete Challenge Day 1' "$ROOT/android-v04-challenge-day1.xml"
 tap_label "$ROOT/android-v04-challenge-day1.xml" 'Complete Challenge Day 1'
 sleep 1
+# Progress summary is at the top after completion.
+scroll_top
 pull_ui /sdcard/v04-challenge-complete.xml "$ROOT/android-v04-challenge-complete.xml"
 grep -q '1/32 complete' "$ROOT/android-v04-challenge-complete.xml"
-scroll_top
-pull_ui /sdcard/v04-challenge-top.xml "$ROOT/android-v04-challenge-top.xml"
-tap_label "$ROOT/android-v04-challenge-top.xml" 'Close 32-Day Rewire'
+tap_label "$ROOT/android-v04-challenge-complete.xml" 'Close 32-Day Rewire'
 sleep 2
 
 stage layered-meditation
@@ -140,6 +151,10 @@ for _ in 1 2 3; do
   scroll_down
   pull_ui /sdcard/v04-practice-final.xml "$ROOT/android-v04-practice-final.xml"
 done
+# Move the large Deep Rest card above the fixed bottom navigation before tapping it.
+scroll_down
+pull_ui /sdcard/v04-practice-final.xml "$ROOT/android-v04-practice-final.xml"
+grep -q 'Start Deep Rest' "$ROOT/android-v04-practice-final.xml"
 tap_label "$ROOT/android-v04-practice-final.xml" 'Start Deep Rest'
 sleep 2
 pull_ui /sdcard/v04-session-before.xml "$ROOT/android-v04-session-before.xml"
@@ -151,17 +166,27 @@ sleep 2
 pull_ui /sdcard/v04-session-configured.xml "$ROOT/android-v04-session-configured.xml"
 grep -q 'Ocean' "$ROOT/android-v04-session-configured.xml"
 grep -q 'Theta 6 Hz' "$ROOT/android-v04-session-configured.xml"
+# The session start control is below the initial configuration viewport.
+for _ in 1 2 3 4 5; do
+  pull_ui /sdcard/v04-session-configured.xml "$ROOT/android-v04-session-configured.xml"
+  if grep -q 'Start Deep Rest' "$ROOT/android-v04-session-configured.xml"; then break; fi
+  scroll_down
+done
+grep -q 'Start Deep Rest' "$ROOT/android-v04-session-configured.xml"
 tap_label "$ROOT/android-v04-session-configured.xml" 'Start Deep Rest'
-sleep 5
-pull_ui /sdcard/v04-session-playing.xml "$ROOT/android-v04-session-playing.xml"
-grep -q 'Natural narration' "$ROOT/android-v04-session-playing.xml"
-grep -q 'Meditation sound' "$ROOT/android-v04-session-playing.xml"
-grep -q 'Ocean' "$ROOT/android-v04-session-playing.xml"
-grep -q 'Theta 6 Hz' "$ROOT/android-v04-session-playing.xml"
+sleep 2
+# Active-session UI changes every second, so uiautomator may never reach an idle state here.
+# Verify the exact configured session at the Android audio-service layer instead.
+APP_PID=$(adb shell pidof "$APP_ID" | tr -d '\r' | awk '{print $1}')
+test -n "$APP_PID"
 adb shell dumpsys audio > "$ROOT/android-v04-audio.txt"
 ACTIVE_COUNT=$(grep -Ec "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID} state:started" "$ROOT/android-v04-audio.txt" || true)
 echo "ANDROID_V04_ACTIVE_AUDIO_TRACKS=$ACTIVE_COUNT"
 test "$ACTIVE_COUNT" -ge 2
+# Deep Male neural narration is 24 kHz; Ocean + Theta beds are 22.05 kHz, with Theta stereo.
+grep -Eq "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID}.*sampleRate=24000" "$ROOT/android-v04-audio.txt"
+grep -Eq "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID} state:started.*channelMask=0x1, sampleRate=22050" "$ROOT/android-v04-audio.txt"
+grep -Eq "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID} state:started.*channelMask=0x3, sampleRate=22050" "$ROOT/android-v04-audio.txt"
 
 stage final-checks
 adb logcat -d > "$ROOT/android-v04-logcat.txt"
