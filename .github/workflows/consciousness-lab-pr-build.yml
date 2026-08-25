@@ -104,7 +104,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot
           script: |
-            set -euo pipefail
+            set -eu
             APK=projects/quantum-consciousness-lab/ConsciousnessLab-v0.3.0-universal-standalone.apk
             tap_label() {
               XML="$1" LABEL="$2" python3 - <<'PY'
@@ -125,31 +125,31 @@ jobs:
             adb shell uiautomator dump /sdcard/onboarding.xml >/dev/null 2>&1
             adb pull /sdcard/onboarding.xml projects/quantum-consciousness-lab/android-onboarding.xml >/dev/null 2>&1
             grep -q 'Enter the Lab' projects/quantum-consciousness-lab/android-onboarding.xml
-            read X Y <<<"$(tap_label projects/quantum-consciousness-lab/android-onboarding.xml 'Enter the Lab')"; adb shell input tap "$X" "$Y"
+            set -- $(tap_label projects/quantum-consciousness-lab/android-onboarding.xml 'Enter the Lab'); adb shell input tap "$1" "$2"
             sleep 4
             adb shell uiautomator dump /sdcard/home.xml >/dev/null 2>&1
             adb pull /sdcard/home.xml projects/quantum-consciousness-lab/android-home.xml >/dev/null 2>&1
             grep -q 'How do you want to feel?' projects/quantum-consciousness-lab/android-home.xml
             for tab in Home Practice Explore Lab Journal; do grep -q "$tab" projects/quantum-consciousness-lab/android-home.xml; done
-            read X Y <<<"$(tap_label projects/quantum-consciousness-lab/android-home.xml 'Practice')"; adb shell input tap "$X" "$Y"
+            set -- $(tap_label projects/quantum-consciousness-lab/android-home.xml 'Practice'); adb shell input tap "$1" "$2"
             sleep 3
             adb shell uiautomator dump /sdcard/practice.xml >/dev/null 2>&1
             adb pull /sdcard/practice.xml projects/quantum-consciousness-lab/android-practice.xml >/dev/null 2>&1
             grep -q 'Choose a path' projects/quantum-consciousness-lab/android-practice.xml
             grep -q 'Deep Rest' projects/quantum-consciousness-lab/android-practice.xml
-            read X Y <<<"$(tap_label projects/quantum-consciousness-lab/android-practice.xml 'Start Deep Rest')"; adb shell input tap "$X" "$Y"
+            set -- $(tap_label projects/quantum-consciousness-lab/android-practice.xml 'Start Deep Rest'); adb shell input tap "$1" "$2"
             sleep 3
             adb shell uiautomator dump /sdcard/session-before.xml >/dev/null 2>&1
             adb pull /sdcard/session-before.xml projects/quantum-consciousness-lab/android-session-before.xml >/dev/null 2>&1
             grep -q 'Warm Female' projects/quantum-consciousness-lab/android-session-before.xml
             grep -q 'Deep Male' projects/quantum-consciousness-lab/android-session-before.xml
             grep -q 'Android system TTS is not used' projects/quantum-consciousness-lab/android-session-before.xml
-            read X Y <<<"$(tap_label projects/quantum-consciousness-lab/android-session-before.xml 'Narrator Deep Male')"; adb shell input tap "$X" "$Y"
+            set -- $(tap_label projects/quantum-consciousness-lab/android-session-before.xml 'Narrator Deep Male'); adb shell input tap "$1" "$2"
             sleep 2
             adb shell uiautomator dump /sdcard/session-preview.xml >/dev/null 2>&1
             adb pull /sdcard/session-preview.xml projects/quantum-consciousness-lab/android-session-preview.xml >/dev/null 2>&1
             grep -q 'Natural narration' projects/quantum-consciousness-lab/android-session-preview.xml
-            read X Y <<<"$(tap_label projects/quantum-consciousness-lab/android-session-preview.xml 'Start Deep Rest')"; adb shell input tap "$X" "$Y"
+            set -- $(tap_label projects/quantum-consciousness-lab/android-session-preview.xml 'Start Deep Rest'); adb shell input tap "$1" "$2"
             sleep 4
             adb shell uiautomator dump /sdcard/session-running.xml >/dev/null 2>&1
             adb pull /sdcard/session-running.xml projects/quantum-consciousness-lab/android-session-running.xml >/dev/null 2>&1
