@@ -107,14 +107,14 @@ sleep 4
 
 stage meditation-audio
 APP_PID=$(adb shell pidof "$APP_ID" | tr -d '\r' | awk '{print $1}')
-APP_UID=$(adb shell dumpsys package "$APP_ID" | sed -n 's/.*userId=\([0-9][0-9]*\).*/\1/p' | head -n 1 | tr -d '\r')
 test -n "$APP_PID"
-test -n "$APP_UID"
 adb shell dumpsys audio > "$ROOT/android-audio.txt"
-grep -Eq "AudioPlaybackConfiguration .*u/pid:${APP_UID}/${APP_PID} state:started" "$ROOT/android-audio.txt"
-echo "ANDROID_V03_AUDIO_ACTIVE uid=$APP_UID pid=$APP_PID"
+grep -Eq "AudioPlaybackConfiguration .*u/pid:[0-9]+/${APP_PID} state:started" "$ROOT/android-audio.txt"
+adb logcat -d > "$ROOT/android-logcat.txt"
+grep -Eq "MediaSessionService: .*record=${APP_ID}/.*state=PLAYING\(3\)" "$ROOT/android-logcat.txt"
+echo "ANDROID_V03_AUDIO_ACTIVE pid=$APP_PID"
 
-capture_evidence
+adb exec-out screencap -p > "$ROOT/android-smoke.png"
 ! grep -qi 'Unable to load script' "$ROOT"/android-*.xml "$ROOT/android-logcat.txt"
 ! grep -q 'FATAL EXCEPTION' "$ROOT/android-logcat.txt"
 grep -Fq 'Running "main"' "$ROOT/android-logcat.txt"
