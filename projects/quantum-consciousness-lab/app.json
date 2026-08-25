@@ -2,11 +2,11 @@
   "expo": {
     "name": "Consciousness Lab",
     "slug": "consciousness-lab",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "android": {
       "package": "com.merg357.consciousnesslab",
-      "versionCode": 1
+      "versionCode": 2
     }
   }
 }
