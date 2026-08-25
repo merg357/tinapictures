@@ -90,6 +90,16 @@ tap_label "$ROOT/android-v04-sounds.xml" 'Use sound Ocean'
 sleep 1
 tap_label "$ROOT/android-v04-sounds.xml" 'Close Sound Library'
 sleep 2
+# Relaunch after sound selection so CI and local emulators start Affirmation Studio from the same Practice viewport.
+# This also verifies the Ocean selection survives process restart.
+adb shell am force-stop "$APP_ID"
+sleep 1
+adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null
+sleep 7
+pull_ui /sdcard/v04-post-sound-relaunch.xml "$ROOT/android-v04-post-sound-relaunch.xml"
+grep -q 'Practice' "$ROOT/android-v04-post-sound-relaunch.xml"
+tap_label "$ROOT/android-v04-post-sound-relaunch.xml" 'Practice'
+sleep 2
 
 stage affirmation-studio
 pull_ui /sdcard/v04-practice-after-sounds.xml "$ROOT/android-v04-practice-after-sounds.xml"
