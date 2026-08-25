@@ -1,4 +1,5 @@
 export type UserLens = 'science' | 'science-frontier' | 'full';
+export type NarratorId = 'female' | 'male';
 export type TabKey = 'home' | 'practice' | 'explore' | 'lab' | 'journal';
 export type EvidenceLevel = 'Established' | 'Supported' | 'Emerging' | 'Theoretical' | 'Philosophical' | 'Spiritual / Experiential';
 

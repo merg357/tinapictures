@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "female": {
+    "arrive": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/9661a3fa-bd0e-4d88-aa89-7085d8a2d4ef.mp3",
+    "regulate": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/3905b4df-5923-41dc-8d65-9c74bc004cbe.mp3",
+    "open": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/1cabf4c0-0045-4c86-8c1c-055bdd261053.mp3",
+    "closing": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/122ac92a-2146-4e92-b045-4412e401d46c.mp3",
+    "drift": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/70f32f44-94eb-4121-8bbf-832f04da93d1.mp3",
+    "observer-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/205761e8-2bc7-4f8a-ac28-43defc4b96b2.mp3",
+    "coherence-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/1f2e9488-94d8-4975-a422-2276565af208.mp3",
+    "deep-rest-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/69c9abc0-6460-47f7-bce3-32252e328253.mp3",
+    "intention-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/314fc5e0-7501-4af2-a3e3-e864398b2836.mp3",
+    "quantum-foundations-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/94dc4b9c-a5b5-4d3b-9f2a-0df2b530974c.mp3",
+    "expanded-consciousness-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/c50d3c16-5528-4132-a9b3-2a67080f7173.mp3",
+    "synchronicity-dreams-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/939c1286-d85b-4951-994b-d48ffc6aabfc.mp3"
+  },
+  "male": {
+    "arrive": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ef5ed653-56b6-4890-8740-905c7cb7c35b.mp3",
+    "regulate": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/98657a7b-ca57-4487-930c-bfc6b6b6108d.mp3",
+    "open": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/7ab87cf9-eabf-4817-b6e3-4681d97942be.mp3",
+    "closing": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ef893f85-166a-4254-bea1-1497b6e8ce17.mp3",
+    "drift": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/30cc435f-abba-4366-afde-df9a104f105a.mp3",
+    "observer-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/689cf239-3ccf-439b-bfbd-8f705e67632b.mp3",
+    "coherence-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/b59c19b3-9228-447b-820b-cc1713442c87.mp3",
+    "deep-rest-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/1a5bf4be-b507-4330-b6de-4b5eb921cd41.mp3",
+    "intention-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/90883b76-e70a-49c9-b121-860d65294684.mp3",
+    "quantum-foundations-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/a312b52b-1e4a-440b-be77-eabce38eb6ff.mp3",
+    "expanded-consciousness-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/cbd0af28-8ec1-4ee8-8a31-a6e73057d613.mp3",
+    "synchronicity-dreams-focus": "https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/bced29f9-2ff4-4ae3-9444-dce7d88dabd0.mp3"
+  }
+}

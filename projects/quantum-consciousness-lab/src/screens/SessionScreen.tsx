@@ -1,18 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { BreathOrb } from '../components/BreathOrb';
 import { EvidenceBadge } from '../components/EvidenceBadge';
 import { COLORS } from '../theme';
-import type { SessionPlan, SessionRecord } from '../types';
-import { pickBestVoice } from '../core/insights';
+import type { NarratorId, SessionPlan, SessionRecord } from '../types';
+import { NARRATOR_LABELS } from '../voice/voiceManifest';
+import { useMeditationPlayer } from '../voice/useMeditationPlayer';
 
 const RATING_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-type VoiceOption = { identifier: string; name: string; language: string; quality?: string };
-
-export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan; onExit: () => void; onComplete: (record: SessionRecord) => void }) {
+export function SessionScreen({ plan, narrator, onNarratorChange, onExit, onComplete }: {
+  plan: SessionPlan;
+  narrator: NarratorId;
+  onNarratorChange: (narrator: NarratorId) => void | Promise<void>;
+  onExit: () => void;
+  onComplete: (record: SessionRecord) => void;
+}) {
   const totalSeconds = plan.minutes * 60;
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -20,11 +24,7 @@ export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan;
   const [reflecting, setReflecting] = useState(false);
   const [before, setBefore] = useState(6);
   const [after, setAfter] = useState(4);
-  const [spokenSegment, setSpokenSegment] = useState(-1);
-  const [voiceId, setVoiceId] = useState<string | undefined>(undefined);
-  const [voiceName, setVoiceName] = useState('Best available voice');
   const [minimalGuidance, setMinimalGuidance] = useState(false);
-  const speechRun = useRef(0);
 
   const currentIndex = useMemo(() => {
     let cursor = 0;
@@ -37,16 +37,16 @@ export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan;
   const current = plan.segments[currentIndex];
   const finished = elapsed >= totalSeconds;
 
-  useEffect(() => {
-    Speech.getAvailableVoicesAsync().then((voices) => {
-      const best = pickBestVoice(voices as VoiceOption[]) as VoiceOption | null;
-      if (best) {
-        setVoiceId(best.identifier);
-        setVoiceName(best.name || 'Enhanced English voice');
-      }
-    }).catch(() => undefined);
-    return () => { speechRun.current += 1; Speech.stop(); };
-  }, []);
+  const narration = useMeditationPlayer({
+    practiceId: plan.pathId,
+    narratorId: narrator,
+    segmentIndex: currentIndex,
+    started,
+    running,
+    reflecting,
+    finished,
+    minimalGuidance,
+  });
 
   useEffect(() => {
     if (!started || !running || finished || reflecting) return;
@@ -54,72 +54,41 @@ export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan;
     return () => clearInterval(timer);
   }, [finished, reflecting, running, started, totalSeconds]);
 
-  function speakNaturally(text: string) {
-    speechRun.current += 1;
-    const run = speechRun.current;
-    Speech.stop();
-    const source = minimalGuidance ? (text.split(/(?<=[.!?])\s+/)[0] || text) : text;
-    const chunks = source.split(/(?<=[.!?])\s+/).map((item) => item.trim()).filter(Boolean);
-    let index = 0;
-    const next = () => {
-      if (run !== speechRun.current || index >= chunks.length) return;
-      const chunk = chunks[index++];
-      Speech.speak(chunk, {
-        voice: voiceId,
-        language: 'en-US',
-        rate: 0.70,
-        pitch: 0.98,
-        onDone: () => { if (run === speechRun.current && index < chunks.length) setTimeout(next, 900); },
-        onStopped: () => undefined,
-        onError: () => undefined,
-      });
-    };
-    next();
-  }
-
   useEffect(() => {
     if (!started || !running || reflecting || finished) return;
-    if (currentIndex !== spokenSegment) {
-      setSpokenSegment(currentIndex);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-      speakNaturally(current.prompt);
-    }
-  }, [currentIndex, current.prompt, finished, minimalGuidance, reflecting, running, spokenSegment, started, voiceId]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  }, [currentIndex, finished, reflecting, running, started]);
 
   useEffect(() => {
     if (!finished || reflecting) return;
     setRunning(false);
-    speechRun.current += 1;
-    Speech.stop();
+    narration.stop();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     setReflecting(true);
-  }, [finished, reflecting]);
+  }, [finished, narration.stop, reflecting]);
+
+  function chooseNarrator(next: NarratorId) {
+    onNarratorChange(next);
+    narration.preview(next);
+  }
 
   function begin() {
+    narration.stop();
+    setElapsed(0);
     setStarted(true);
     setRunning(true);
-    setSpokenSegment(-1);
   }
 
-  function toggle() {
-    if (running) {
-      speechRun.current += 1;
-      Speech.stop();
-      setRunning(false);
-    } else {
-      setRunning(true);
-      setSpokenSegment(-1);
-    }
-  }
+  function toggle() { setRunning((value) => !value); }
 
   function endAndReflect() {
-    speechRun.current += 1;
-    Speech.stop();
+    narration.stop();
     setRunning(false);
     setReflecting(true);
   }
 
   function saveAndFinish() {
+    narration.stop();
     onComplete({
       id: `session-${Date.now()}`,
       pathId: plan.pathId,
@@ -139,14 +108,22 @@ export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan;
 
   if (!started) {
     return <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}><ScrollView contentContainerStyle={{ padding: 22, paddingTop: 30, paddingBottom: 40 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Pressable onPress={onExit}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>Close</Text></Pressable><EvidenceBadge level={plan.evidence} /></View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Pressable onPress={() => { narration.stop(); onExit(); }}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>Close</Text></Pressable><EvidenceBadge level={plan.evidence} /></View>
       <Text style={{ color: COLORS.cyan, fontSize: 11, letterSpacing: 2, fontWeight: '900', marginTop: 34 }}>BEFORE YOU BEGIN</Text>
       <Text style={{ color: COLORS.text, fontSize: 31, fontWeight: '900', marginTop: 9 }}>{plan.title}</Text>
       <Text style={{ color: COLORS.muted, fontSize: 14, lineHeight: 21, marginTop: 7 }}>{plan.rationale}</Text>
       <Text style={{ color: COLORS.text, fontSize: 17, fontWeight: '900', marginTop: 28 }}>How activated or unsettled do you feel?</Text>
       <Text style={{ color: COLORS.muted, marginTop: 5 }}>1 = very settled · 10 = extremely activated</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 14 }}>{RATING_VALUES.map((value) => <Pressable key={value} onPress={() => setBefore(value)} style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: before === value ? '#E9E7FF' : COLORS.card, borderWidth: 1, borderColor: before === value ? '#E9E7FF' : COLORS.border }}><Text style={{ color: before === value ? '#121529' : COLORS.muted, fontWeight: '900' }}>{value}</Text></Pressable>)}</View>
-      <View style={{ backgroundColor: COLORS.card, borderRadius: 17, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginTop: 22 }}><Text style={{ color: COLORS.muted, fontSize: 11, fontWeight: '800' }}>VOICE</Text><Text numberOfLines={1} style={{ color: COLORS.text, fontWeight: '800', marginTop: 5 }}>{voiceName}</Text><Text style={{ color: '#7D86A5', fontSize: 12, lineHeight: 17, marginTop: 4 }}>V0.2 selects the highest-quality English voice installed on your device and uses slower sentence pacing with real pauses.</Text></View>
+      <View style={{ backgroundColor: COLORS.card, borderRadius: 17, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginTop: 22 }}>
+        <Text style={{ color: COLORS.muted, fontSize: 11, fontWeight: '800' }}>NATURAL NARRATOR</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+          {(['female', 'male'] as NarratorId[]).map((id) => <Pressable key={id} accessibilityRole="button" accessibilityLabel={`Narrator ${NARRATOR_LABELS[id]}`} onPress={() => chooseNarrator(id)} style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 13, backgroundColor: narrator === id ? '#272348' : COLORS.bg, borderWidth: 1, borderColor: narrator === id ? COLORS.violet : COLORS.border }}><Text style={{ color: COLORS.text, fontWeight: '900' }}>{NARRATOR_LABELS[id]}</Text><Text style={{ color: '#7D86A5', fontSize: 11, marginTop: 3 }}>Tap to preview</Text></Pressable>)}
+        </View>
+        <Text style={{ color: '#7D86A5', fontSize: 12, lineHeight: 17, marginTop: 10 }}>Neural narration is bundled in the app for offline core practices. Android system TTS is not used for meditation playback.</Text>
+        <Text accessibilityLabel="Narration preview state" style={{ color: narration.state === 'error' ? '#FF9B9B' : COLORS.cyan, fontSize: 12, marginTop: 8 }}>Natural narration · {narration.state}</Text>
+        {narration.error ? <Text style={{ color: '#FF9B9B', fontSize: 11, marginTop: 4 }}>{narration.error}</Text> : null}
+      </View>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}><Pressable onPress={() => setMinimalGuidance(false)} style={{ flex: 1, paddingVertical: 11, alignItems: 'center', borderRadius: 13, backgroundColor: !minimalGuidance ? '#272348' : COLORS.card, borderWidth: 1, borderColor: !minimalGuidance ? COLORS.violet : COLORS.border }}><Text style={{ color: COLORS.text, fontWeight: '800' }}>Full Guidance</Text></Pressable><Pressable onPress={() => setMinimalGuidance(true)} style={{ flex: 1, paddingVertical: 11, alignItems: 'center', borderRadius: 13, backgroundColor: minimalGuidance ? '#272348' : COLORS.card, borderWidth: 1, borderColor: minimalGuidance ? COLORS.violet : COLORS.border }}><Text style={{ color: COLORS.text, fontWeight: '800' }}>More Silence</Text></Pressable></View>
       <Pressable accessibilityRole="button" accessibilityLabel={`Start ${plan.title}`} onPress={begin} style={{ backgroundColor: '#F4F2FF', paddingVertical: 16, borderRadius: 17, alignItems: 'center', marginTop: 22 }}><Text style={{ color: '#111427', fontSize: 16, fontWeight: '900' }}>Start {plan.minutes}-Minute Practice</Text></Pressable>
     </ScrollView></SafeAreaView>;
@@ -160,24 +137,22 @@ export function SessionScreen({ plan, onExit, onComplete }: { plan: SessionPlan;
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 20 }}>{RATING_VALUES.map((value) => <Pressable key={value} onPress={() => setAfter(value)} style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: after === value ? '#E9E7FF' : COLORS.card, borderWidth: 1, borderColor: after === value ? '#E9E7FF' : COLORS.border }}><Text style={{ color: after === value ? '#121529' : COLORS.muted, fontWeight: '900' }}>{value}</Text></Pressable>)}</View>
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}><View style={{ flex: 1, backgroundColor: COLORS.card, borderRadius: 17, padding: 15 }}><Text style={{ color: COLORS.muted, fontSize: 11 }}>BEFORE</Text><Text style={{ color: COLORS.text, fontSize: 27, fontWeight: '900', marginTop: 4 }}>{before}</Text></View><View style={{ flex: 1, backgroundColor: COLORS.card, borderRadius: 17, padding: 15 }}><Text style={{ color: COLORS.muted, fontSize: 11 }}>AFTER</Text><Text style={{ color: COLORS.green, fontSize: 27, fontWeight: '900', marginTop: 4 }}>{after}</Text></View></View>
       <Pressable accessibilityRole="button" accessibilityLabel="Save session and finish" onPress={saveAndFinish} style={{ backgroundColor: '#F4F2FF', paddingVertical: 16, borderRadius: 17, alignItems: 'center', marginTop: 20 }}><Text style={{ color: '#111427', fontSize: 16, fontWeight: '900' }}>Save & Finish</Text></Pressable>
-      <Pressable onPress={onExit} style={{ paddingVertical: 14, alignItems: 'center', marginTop: 6 }}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>Discard</Text></Pressable>
+      <Pressable onPress={() => { narration.stop(); onExit(); }} style={{ paddingVertical: 14, alignItems: 'center', marginTop: 6 }}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>Discard</Text></Pressable>
     </ScrollView></SafeAreaView>;
   }
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 22, paddingTop: 28, paddingBottom: 40 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Pressable onPress={endAndReflect}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>End</Text></Pressable><EvidenceBadge level={plan.evidence} /></View>
-        <Text style={{ color: COLORS.cyan, fontSize: 11, letterSpacing: 2, fontWeight: '900', marginTop: 28 }}>CURRENT PRACTICE</Text>
-        <Text style={{ color: COLORS.text, fontSize: 31, fontWeight: '900', marginTop: 8 }}>{plan.title}</Text>
-        <Text style={{ color: COLORS.muted, marginTop: 6 }}>{current.title}</Text>
-        {breathActive ? <BreathOrb active={running} /> : <View style={{ height: 210, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 142, height: 142, borderRadius: 71, borderWidth: 1, borderColor: '#695DE0AA', backgroundColor: '#312E8122', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: COLORS.cyan, fontSize: 12, letterSpacing: 1.4 }}>AWARENESS</Text></View></View>}
-        <Text style={{ color: COLORS.text, fontSize: 42, fontVariant: ['tabular-nums'], textAlign: 'center', fontWeight: '800' }}>{mm}:{ss}</Text>
-        <Text style={{ color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 14 }}>{current.prompt}</Text>
-        <View style={{ height: 5, borderRadius: 999, backgroundColor: '#22273A', overflow: 'hidden', marginTop: 24 }}><View style={{ width: `${Math.min(100, (elapsed / totalSeconds) * 100)}%`, height: '100%', backgroundColor: COLORS.violet }} /></View>
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}><Pressable onPress={toggle} style={{ flex: 1, backgroundColor: '#F5F3FF', paddingVertical: 15, alignItems: 'center', borderRadius: 16 }}><Text style={{ color: '#111327', fontWeight: '900' }}>{running ? 'Pause' : 'Resume'}</Text></Pressable><Pressable onPress={endAndReflect} style={{ flex: 1, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 15, alignItems: 'center', borderRadius: 16 }}><Text style={{ color: COLORS.text, fontWeight: '800' }}>End & Reflect</Text></Pressable></View>
-        <Text numberOfLines={1} style={{ color: '#737C99', fontSize: 11, textAlign: 'center', marginTop: 15 }}>Voice: {voiceName} · {minimalGuidance ? 'more silence' : 'full guidance'}</Text>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  return <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}><ScrollView contentContainerStyle={{ padding: 22, paddingTop: 28, paddingBottom: 40 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Pressable onPress={endAndReflect}><Text style={{ color: COLORS.muted, fontWeight: '800' }}>End</Text></Pressable><EvidenceBadge level={plan.evidence} /></View>
+    <Text style={{ color: COLORS.cyan, fontSize: 11, letterSpacing: 2, fontWeight: '900', marginTop: 28 }}>CURRENT PRACTICE</Text>
+    <Text style={{ color: COLORS.text, fontSize: 31, fontWeight: '900', marginTop: 8 }}>{plan.title}</Text>
+    <Text style={{ color: COLORS.muted, marginTop: 6 }}>{current.title}</Text>
+    {breathActive ? <BreathOrb active={running} /> : <View style={{ height: 210, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 142, height: 142, borderRadius: 71, borderWidth: 1, borderColor: '#695DE0AA', backgroundColor: '#312E8122', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: COLORS.cyan, fontSize: 12, letterSpacing: 1.4 }}>AWARENESS</Text></View></View>}
+    <Text style={{ color: COLORS.text, fontSize: 42, fontVariant: ['tabular-nums'], textAlign: 'center', fontWeight: '800' }}>{mm}:{ss}</Text>
+    <Text style={{ color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 14 }}>{current.prompt}</Text>
+    <Text accessibilityLabel="Natural narration playback state" style={{ color: narration.state === 'error' ? '#FF9B9B' : COLORS.cyan, fontSize: 12, textAlign: 'center', marginTop: 12 }}>Natural narration · {narration.state}</Text>
+    {narration.error ? <Text style={{ color: '#FF9B9B', fontSize: 11, textAlign: 'center', marginTop: 4 }}>{narration.error}</Text> : null}
+    <View style={{ height: 5, borderRadius: 999, backgroundColor: '#22273A', overflow: 'hidden', marginTop: 24 }}><View style={{ width: `${Math.min(100, (elapsed / totalSeconds) * 100)}%`, height: '100%', backgroundColor: COLORS.violet }} /></View>
+    <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}><Pressable onPress={toggle} style={{ flex: 1, backgroundColor: '#F5F3FF', paddingVertical: 15, alignItems: 'center', borderRadius: 16 }}><Text style={{ color: '#111327', fontWeight: '900' }}>{running ? 'Pause' : 'Resume'}</Text></Pressable><Pressable onPress={endAndReflect} style={{ flex: 1, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 15, alignItems: 'center', borderRadius: 16 }}><Text style={{ color: COLORS.text, fontWeight: '800' }}>End & Reflect</Text></Pressable></View>
+    <Text numberOfLines={1} style={{ color: '#737C99', fontSize: 11, textAlign: 'center', marginTop: 15 }}>Voice: {NARRATOR_LABELS[narrator]} · {minimalGuidance ? 'more silence' : 'full guidance'} · bundled offline</Text>
+  </ScrollView></SafeAreaView>;
 }

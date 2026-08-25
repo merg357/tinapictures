@@ -75,25 +75,4 @@ function recommendPractice(text = '') {
   return { pathId: 'observer', title: 'Observer', reason: 'Observation and cognitive decentering are a flexible default for repetitive thoughts and mental noise.' };
 }
 
-function pickBestVoice(voices = []) {
-  const english = voices.filter((voice) => String(voice.language || '').toLowerCase().startsWith('en'));
-  const pool = english.length ? english : voices;
-  if (!pool.length) return null;
-
-  const scored = pool.map((voice, index) => {
-    const name = String(voice.name || '').toLowerCase();
-    const quality = String(voice.quality || '').toLowerCase();
-    let score = 0;
-    if (quality.includes('enhanced')) score += 100;
-    if (/(neural|natural|enhanced|studio|premium)/.test(name)) score += 40;
-    if (/(google|samsung|microsoft)/.test(name)) score += 8;
-    if (/(novelty|robot|whisper|child|funny)/.test(name)) score -= 100;
-    score -= index / 1000;
-    return { voice, score };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored[0].voice;
-}
-
-module.exports = { NAV_ITEMS, computeStats, recommendPractice, pickBestVoice };
+module.exports = { NAV_ITEMS, computeStats, recommendPractice };
