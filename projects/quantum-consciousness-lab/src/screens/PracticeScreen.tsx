@@ -13,6 +13,7 @@ type Practice = {
   evidence: EvidenceLevel;
   goal: string;
   intent: string;
+  minutes?: number;
   group: 'Core' | 'Rewire & Embodiment';
 };
 
@@ -28,6 +29,7 @@ const PRACTICES: Practice[] = [
   { id: 'breaking-pattern', title: 'Breaking the Pattern', subtitle: 'Recognize, interrupt, redirect, rehearse', evidence: 'Supported', goal: 'Reset', intent: 'break an old pattern and interrupt my automatic reaction', group: 'Rewire & Embodiment' },
   { id: 'heart-coherence', title: 'Heart Coherence', subtitle: 'Slow breath + heart-area attention + gratitude', evidence: 'Supported', goal: 'Calm', intent: 'heart focused breathing and coherence', group: 'Rewire & Embodiment' },
   { id: 'future-self', title: 'Future Self', subtitle: 'Mental rehearsal tied to real behavior', evidence: 'Supported', goal: 'Intention', intent: 'rehearse my future self identity', group: 'Rewire & Embodiment' },
+  { id: 'become-future-you', title: 'Become the Future You', subtitle: 'Full guided meditation using your approved script', evidence: 'Supported', goal: 'Intention', intent: 'become the future you approved future meditation', minutes: 30, group: 'Rewire & Embodiment' },
   { id: 'energy-centers', title: 'Energy Center Journey', subtitle: 'Body-region attention with spiritual framing', evidence: 'Spiritual / Experiential', goal: 'Go Deep', intent: 'energy center journey through the body', group: 'Rewire & Embodiment' },
   { id: 'new-potentials', title: 'New Possibilities', subtitle: 'Imagine a possible future without guarantee claims', evidence: 'Theoretical', goal: 'Intention', intent: 'tune in to new possibilities and potential', group: 'Rewire & Embodiment' },
   { id: 'walking-embodiment', title: 'Walking Embodiment', subtitle: 'Practice identity through posture, pace and movement', evidence: 'Supported', goal: 'Focus', intent: 'walking meditation embody my new self', group: 'Rewire & Embodiment' },
@@ -105,7 +107,7 @@ export function PracticeScreen({
                 key={practice.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Start ${practice.title}`}
-                onPress={() => onBegin(composeSession({ intent: practice.intent, goal: practice.goal, minutes, lens }) as SessionPlan)}
+                onPress={() => onBegin(composeSession({ intent: practice.intent, goal: practice.goal, minutes: practice.minutes ?? minutes, lens }) as SessionPlan)}
                 style={{ backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: 20, padding: 16 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
@@ -116,7 +118,7 @@ export function PracticeScreen({
                   <EvidenceBadge level={practice.evidence} />
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-                  <Text style={{ color: '#858DA8', fontSize: 12 }}>{minutes} min · natural voice + soundscape</Text>
+                  <Text style={{ color: '#858DA8', fontSize: 12 }}>{practice.minutes ?? minutes} min · natural voice + soundscape</Text>
                   <Text style={{ color: COLORS.cyan, fontWeight: '900' }}>Start ›</Text>
                 </View>
               </Pressable>

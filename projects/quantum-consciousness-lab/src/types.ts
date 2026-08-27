@@ -8,6 +8,7 @@ export interface AudioSettings {
   backgroundTrackId: string;
   frequencyTrackId: string;
   narrationVolume: number;
+  narrationSpeed: number;
   backgroundVolume: number;
   frequencyVolume: number;
   breathPulseEnabled: boolean;
@@ -66,6 +67,7 @@ export interface SessionPlan {
   minutes: number;
   intent: string;
   goal: string;
+  narrationDriven?: boolean;
   segments: SessionSegment[];
 }
 

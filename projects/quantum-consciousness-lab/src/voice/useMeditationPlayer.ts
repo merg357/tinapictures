@@ -15,6 +15,7 @@ type Options = {
   finished: boolean;
   minimalGuidance: boolean;
   narrationVolume?: number;
+  narrationSpeed?: number;
 };
 
 export function useMeditationPlayer(options: Options) {
@@ -22,6 +23,7 @@ export function useMeditationPlayer(options: Options) {
   const status = useAudioPlayerStatus(player);
   const [state, setState] = useState<NarrationState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
   const loadedKey = useRef('');
   const generation = useRef(0);
 
@@ -41,7 +43,16 @@ export function useMeditationPlayer(options: Options) {
   }, [options.narrationVolume, player]);
 
   useEffect(() => {
-    if (status.didJustFinish && state === 'playing') setState('silence');
+    const rate = Math.max(0.5, Math.min(1.5, options.narrationSpeed ?? 1));
+    player.shouldCorrectPitch = true;
+    player.setPlaybackRate(rate);
+  }, [options.narrationSpeed, player]);
+
+  useEffect(() => {
+    if (status.didJustFinish && state === 'playing') {
+      setCompleted(true);
+      setState('silence');
+    }
     if (status.error) {
       setError(status.error);
       setState('error');
@@ -90,6 +101,7 @@ export function useMeditationPlayer(options: Options) {
 
     const token = ++generation.current;
     loadedKey.current = key;
+    setCompleted(false);
     setError(null);
     setState('loading');
     try {
@@ -124,6 +136,7 @@ export function useMeditationPlayer(options: Options) {
   const preview = useCallback(async (narratorId: NarratorId) => {
     generation.current += 1;
     loadedKey.current = '';
+    setCompleted(false);
     setError(null);
     setState('loading');
     try {
@@ -140,6 +153,7 @@ export function useMeditationPlayer(options: Options) {
   const stop = useCallback(() => {
     generation.current += 1;
     loadedKey.current = '';
+    setCompleted(false);
     player.pause();
     player.seekTo(0).catch(() => undefined);
     setState('idle');
@@ -151,6 +165,7 @@ export function useMeditationPlayer(options: Options) {
     preview,
     stop,
     status,
+    completed,
     isNarrating: options.started && state === 'playing' && status.playing,
   };
 }

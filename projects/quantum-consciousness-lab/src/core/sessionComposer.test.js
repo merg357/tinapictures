@@ -73,3 +73,19 @@ test('v0.4 routes twelve expanded practice intents with explicit evidence labels
     assert.equal(totalMinutes(plan), 10);
   }
 });
+
+
+test('approved Become the Future You meditation is fixed-duration and narration-driven', () => {
+  const plan = composeSession({
+    intent: 'become the future you approved future meditation',
+    goal: 'Intention',
+    minutes: 10,
+    lens: 'full',
+  });
+  assert.equal(plan.pathId, 'become-future-you');
+  assert.equal(plan.title, 'Become the Future You');
+  assert.equal(plan.minutes, 30);
+  assert.equal(plan.narrationDriven, true);
+  assert.equal(plan.segments.length, 1);
+  assert.equal(totalMinutes(plan), 30);
+});

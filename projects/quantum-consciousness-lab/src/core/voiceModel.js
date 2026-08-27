@@ -7,12 +7,14 @@ const PRACTICES = [
   'observer','coherence','deep-rest','intention','quantum-foundations','expanded-consciousness','synchronicity-dreams',
   'spacious-awareness','breaking-pattern','heart-coherence','future-self','energy-centers','new-potentials',
   'walking-embodiment','gratitude-receiving','deep-sleep-integration','abundance-identity','purpose-direction','stress-stillness',
+  'become-future-you',
 ];
 
 function resolveVoiceSlots(practiceId, narratorId) {
   if (!PRACTICES.includes(practiceId)) throw new Error(`Unknown practice: ${practiceId}`);
   if (!NARRATORS[narratorId]) throw new Error(`Unknown narrator: ${narratorId}`);
-  return Array.from({ length: 5 }, (_, segmentIndex) => ({
+  const slotCount = practiceId === 'become-future-you' ? 1 : 5;
+  return Array.from({ length: slotCount }, (_, segmentIndex) => ({
     practiceId,
     narratorId,
     segmentIndex,

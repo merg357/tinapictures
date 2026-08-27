@@ -13,6 +13,7 @@ const PATHS = {
   'breaking-pattern': { pathId:'breaking-pattern', title:'Breaking the Pattern', evidence:'Supported', rationale:'Notice an automatic thought-emotion-action loop, interrupt it, and rehearse a more useful response.', segmentNames:['Arrive','Recognize the loop','Interrupt','Rehearse a new response','Integrate'] },
   'heart-coherence': { pathId:'heart-coherence', title:'Heart Coherence', evidence:'Supported', rationale:'Pair slow comfortable breathing with heart-area attention and a genuine positive emotion to support autonomic settling.', segmentNames:['Arrive','Slow breathing','Heart attention','Elevated emotion','Integrate'] },
   'future-self': { pathId:'future-self', title:'Future Self', evidence:'Supported', rationale:'Use mental rehearsal to make chosen future behaviors more familiar, then connect imagery to a concrete action.', segmentNames:['Arrive','Regulate','Meet the future self','Rehearse behavior','Commit'] },
+  'become-future-you': { pathId:'become-future-you', title:'Become the Future You', evidence:'Supported', rationale:'A full guided meditation combining relaxation, open awareness, pattern observation, gratitude, and future-self mental rehearsal. These are presented as contemplative and psychological practices, not proof of quantum manifestation.', fixedMinutes:30, narrationDriven:true, segmentNames:['Full guided meditation'] },
   'energy-centers': { pathId:'energy-centers', title:'Energy Center Journey', evidence:'Spiritual / Experiential', rationale:'Move attention through body regions as a contemplative practice. Energy-center meanings are presented as experiential/spiritual framing, not established anatomy.', segmentNames:['Arrive','Ground','Move attention','Open attention','Integrate'] },
   'new-potentials': { pathId:'new-potentials', title:'New Possibilities', evidence:'Theoretical', rationale:'Use imagination and emotional rehearsal to explore possible futures while separating psychological rehearsal from unproven quantum-manifestation claims.', segmentNames:['Arrive','Regulate','Choose a possibility','Rehearse it','Release'] },
   'walking-embodiment': { pathId:'walking-embodiment', title:'Walking Embodiment', evidence:'Supported', rationale:'Use posture, pace, attention, and mental rehearsal while walking to practice a chosen identity in motion.', segmentNames:['Arrive','Stand and orient','Walk with intention','Rehearse identity','Integrate'] },
@@ -34,6 +35,7 @@ function choosePath(intent = '', goal = '') {
   if (/(spacious awareness|sense the space|open[- ]focus|space around my body)/.test(text)) return PATHS['spacious-awareness'];
   if (/(break.*pattern|breaking the pattern|interrupt.*automatic|pattern interruption|old pattern)/.test(text)) return PATHS['breaking-pattern'];
   if (/(heart.*coherence|heart focused|heart-focused|heart breathing)/.test(text)) return PATHS['heart-coherence'];
+  if (/(become the future you|approved future meditation|full future you meditation)/.test(text)) return PATHS['become-future-you'];
   if (/(future self|future-self|new self identity|rehearse.*identity)/.test(text)) return PATHS['future-self'];
   if (/(energy center|energy centre|centers? journey|blessing.*center)/.test(text)) return PATHS['energy-centers'];
   if (/(new possibilit|new potential|tune in.*potential)/.test(text)) return PATHS['new-potentials'];
@@ -82,6 +84,7 @@ const PROMPTS = {
   'breaking-pattern': 'Recognize the old sequence without shame. Interrupt it, breathe, and rehearse the response you want available next time.',
   'heart-coherence': 'Breathe comfortably and attend to the center of the chest while recalling a real feeling of care, gratitude, or appreciation.',
   'future-self': 'Imagine a future version of you handling one real situation well, then identify the behavior you can practice today.',
+  'become-future-you': 'Follow the complete guided narration. Let each pause be part of the practice, and return gently whenever your attention wanders.',
   'energy-centers': 'Move attention slowly through body regions and notice sensations. Any energy-center symbolism is an experiential lens, not established anatomy.',
   'new-potentials': 'Explore a possible future vividly while remembering that mental rehearsal can shape behavior without guaranteeing external outcomes.',
   'walking-embodiment': 'Let posture, pace, gaze, and breathing match the identity you are practicing while you move safely through the environment.',
@@ -99,8 +102,8 @@ function buildPrompt(pathId, segmentName, lens) {
 }
 
 function composeSession({ intent = '', goal = '', minutes = 10, lens = 'science' } = {}) {
-  const normalizedMinutes = nearestSupportedMinutes(minutes);
   const path = choosePath(intent, goal);
+  const normalizedMinutes = path.fixedMinutes || nearestSupportedMinutes(minutes);
   const allocations = allocateMinutes(normalizedMinutes, path.segmentNames.length);
   return {
     id: `${path.pathId}-${normalizedMinutes}-${Date.now()}`,
@@ -113,6 +116,7 @@ function composeSession({ intent = '', goal = '', minutes = 10, lens = 'science'
     minutes: normalizedMinutes,
     intent: String(intent || '').trim(),
     goal: String(goal || '').trim(),
+    narrationDriven: path.narrationDriven === true,
     segments: path.segmentNames.map((name, index) => ({ id: `${path.pathId}-${index + 1}`, title: name, minutes: allocations[index], prompt: buildPrompt(path.pathId, name, lens) })),
   };
 }

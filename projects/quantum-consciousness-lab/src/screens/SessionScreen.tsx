@@ -39,7 +39,8 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
     return plan.segments.length - 1;
   }, [elapsed, plan.segments]);
   const current = plan.segments[currentIndex];
-  const finished = elapsed >= totalSeconds;
+  const narrationDriven = plan.narrationDriven === true;
+  const timedFinished = elapsed >= totalSeconds;
   const minimalGuidance = audioSettings.guidanceLevel === 'less';
 
   const narration = useMeditationPlayer({
@@ -49,10 +50,13 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
     started,
     running,
     reflecting,
-    finished,
+    finished: narrationDriven ? reflecting : timedFinished,
     minimalGuidance,
     narrationVolume: audioSettings.narrationVolume,
+    narrationSpeed: audioSettings.narrationSpeed,
   });
+
+  const finished = narrationDriven ? narration.completed : timedFinished;
 
   const mixer = useMeditationMixer({
     settings: audioSettings,
@@ -65,9 +69,9 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
 
   useEffect(() => {
     if (!started || !running || finished || reflecting) return;
-    const timer = setInterval(() => setElapsed((value) => Math.min(value + 1, totalSeconds)), 1000);
+    const timer = setInterval(() => setElapsed((value) => narrationDriven ? value + 1 : Math.min(value + 1, totalSeconds)), 1000);
     return () => clearInterval(timer);
-  }, [finished, reflecting, running, started, totalSeconds]);
+  }, [finished, narrationDriven, reflecting, running, started, totalSeconds]);
 
   useEffect(() => {
     if (!started || !running || reflecting || finished) return;
@@ -112,7 +116,15 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
     onComplete({ id:`session-${Date.now()}`, pathId:plan.pathId, title:plan.title, minutes:Math.max(1, Math.round(elapsed / 60)) || plan.minutes, before, after, completed:finished || elapsed >= 30, createdAt:Date.now() });
   }
 
-  const remaining = Math.max(0, totalSeconds - elapsed);
+  const playbackRate = Math.max(0.5, Math.min(1.5, audioSettings.narrationSpeed || 1));
+  const mediaDuration = Number(narration.status.duration || totalSeconds);
+  const mediaCurrent = Number(narration.status.currentTime || 0);
+  const remaining = narrationDriven
+    ? Math.max(0, Math.ceil((mediaDuration - mediaCurrent) / playbackRate))
+    : Math.max(0, totalSeconds - elapsed);
+  const progress = narrationDriven && mediaDuration > 0
+    ? Math.min(1, mediaCurrent / mediaDuration)
+    : Math.min(1, elapsed / totalSeconds);
   const mm = Math.floor(remaining / 60).toString().padStart(2,'0');
   const ss = (remaining % 60).toString().padStart(2,'0');
   const breathVisual = /(breath|settle|regulate|arrive|exhale|heart)/i.test(current.title);
@@ -135,9 +147,11 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
     </View>
 
     <AudioMixerControls settings={audioSettings} onChange={changeAudio}/>
-    <View style={{ flexDirection:'row',gap:8,marginTop:12 }}><Pressable accessibilityRole="button" accessibilityLabel="Full Guidance" onPress={()=>changeAudio({...audioSettings,guidanceLevel:'full'})} style={{ flex:1,paddingVertical:11,alignItems:'center',borderRadius:13,backgroundColor:audioSettings.guidanceLevel==='full'?'#272348':COLORS.card,borderWidth:1,borderColor:audioSettings.guidanceLevel==='full'?COLORS.violet:COLORS.border }}><Text style={{ color:COLORS.text,fontWeight:'800' }}>Full Guidance</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Less Guidance" onPress={()=>changeAudio({...audioSettings,guidanceLevel:'less'})} style={{ flex:1,paddingVertical:11,alignItems:'center',borderRadius:13,backgroundColor:audioSettings.guidanceLevel==='less'?'#272348':COLORS.card,borderWidth:1,borderColor:audioSettings.guidanceLevel==='less'?COLORS.violet:COLORS.border }}><Text style={{ color:COLORS.text,fontWeight:'800' }}>Less Guidance</Text></Pressable></View>
-    <Text style={{ color:'#79819E',fontSize:11,lineHeight:16,marginTop:8 }}>Less Guidance reduces spoken prompts but keeps your selected music, nature sound or frequency layer playing through the quiet intervals.</Text>
-    <Pressable accessibilityRole="button" accessibilityLabel={`Start ${plan.title}`} onPress={begin} style={{ backgroundColor:'#F4F2FF',paddingVertical:16,borderRadius:17,alignItems:'center',marginTop:20 }}><Text style={{ color:'#111427',fontSize:16,fontWeight:'900' }}>Start {plan.minutes}-Minute Practice</Text></Pressable>
+    {narrationDriven ? <Text style={{ color:'#79819E',fontSize:11,lineHeight:16,marginTop:10 }}>This guided meditation always plays the complete approved narration. Your selected music, nature sound, frequency, voice volume, and narrator speed remain adjustable.</Text> : <>
+      <View style={{ flexDirection:'row',gap:8,marginTop:12 }}><Pressable accessibilityRole="button" accessibilityLabel="Full Guidance" onPress={()=>changeAudio({...audioSettings,guidanceLevel:'full'})} style={{ flex:1,paddingVertical:11,alignItems:'center',borderRadius:13,backgroundColor:audioSettings.guidanceLevel==='full'?'#272348':COLORS.card,borderWidth:1,borderColor:audioSettings.guidanceLevel==='full'?COLORS.violet:COLORS.border }}><Text style={{ color:COLORS.text,fontWeight:'800' }}>Full Guidance</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Less Guidance" onPress={()=>changeAudio({...audioSettings,guidanceLevel:'less'})} style={{ flex:1,paddingVertical:11,alignItems:'center',borderRadius:13,backgroundColor:audioSettings.guidanceLevel==='less'?'#272348':COLORS.card,borderWidth:1,borderColor:audioSettings.guidanceLevel==='less'?COLORS.violet:COLORS.border }}><Text style={{ color:COLORS.text,fontWeight:'800' }}>Less Guidance</Text></Pressable></View>
+      <Text style={{ color:'#79819E',fontSize:11,lineHeight:16,marginTop:8 }}>Less Guidance reduces spoken prompts but keeps your selected music, nature sound or frequency layer playing through the quiet intervals.</Text>
+    </>}
+    <Pressable accessibilityRole="button" accessibilityLabel={`Start ${plan.title}`} onPress={begin} style={{ backgroundColor:'#F4F2FF',paddingVertical:16,borderRadius:17,alignItems:'center',marginTop:20 }}><Text style={{ color:'#111427',fontSize:16,fontWeight:'900' }}>{narrationDriven ? 'Start Guided Meditation' : `Start ${plan.minutes}-Minute Practice`}</Text></Pressable>
   </ScrollView></SafeAreaView>;
 
   if (reflecting) return <SafeAreaView style={{ flex:1,backgroundColor:COLORS.bg }}><ScrollView contentContainerStyle={{ padding:22,paddingTop:42,paddingBottom:40 }}>
@@ -161,8 +175,9 @@ export function SessionScreen({ plan, narrator, audioSettings, onAudioSettingsCh
     <Text accessibilityLabel="Natural narration playback state" style={{ color:narration.state==='error'?'#FF9B9B':COLORS.cyan,fontSize:12,textAlign:'center',marginTop:12 }}>Natural narration · {narration.state}</Text>
     <Text accessibilityLabel="Meditation mixer playback state" style={{ color:mixer.state==='error'?'#FF9B9B':COLORS.green,fontSize:12,textAlign:'center',marginTop:5 }}>Meditation sound · {mixer.state} · {labels.background} · {labels.frequency}</Text>
     {(narration.error||mixer.error)?<Text style={{ color:'#FF9B9B',fontSize:11,textAlign:'center',marginTop:4 }}>{narration.error||mixer.error}</Text>:null}
-    <View style={{ height:5,borderRadius:999,backgroundColor:'#22273A',overflow:'hidden',marginTop:24 }}><View style={{ width:`${Math.min(100,(elapsed/totalSeconds)*100)}%`,height:'100%',backgroundColor:COLORS.violet }}/></View>
+    <View style={{ height:5,borderRadius:999,backgroundColor:'#22273A',overflow:'hidden',marginTop:24 }}><View style={{ width:`${Math.round(progress*100)}%`,height:'100%',backgroundColor:COLORS.violet }}/></View>
     <View style={{ flexDirection:'row',gap:10,marginTop:24 }}><Pressable accessibilityRole="button" accessibilityLabel={running?'Pause meditation':'Resume meditation'} onPress={()=>setRunning((value)=>!value)} style={{ flex:1,backgroundColor:'#F5F3FF',paddingVertical:15,alignItems:'center',borderRadius:16 }}><Text style={{ color:'#111327',fontWeight:'900' }}>{running?'Pause':'Resume'}</Text></Pressable><Pressable onPress={endAndReflect} style={{ flex:1,borderWidth:1,borderColor:COLORS.border,paddingVertical:15,alignItems:'center',borderRadius:16 }}><Text style={{ color:COLORS.text,fontWeight:'800' }}>End & Reflect</Text></Pressable></View>
-    <Text numberOfLines={2} style={{ color:'#737C99',fontSize:11,textAlign:'center',marginTop:15 }}>Voice: {NARRATOR_LABELS[narrator]} · {minimalGuidance?'less guidance':'full guidance'} · Background: {labels.background} · Frequency: {labels.frequency}</Text>
+    <AudioMixerControls settings={audioSettings} onChange={changeAudio} compact />
+    <Text numberOfLines={3} style={{ color:'#737C99',fontSize:11,textAlign:'center',marginTop:15 }}>Voice: {NARRATOR_LABELS[narrator]} at {audioSettings.narrationSpeed.toFixed(2).replace(/0$/, '')}x · {narrationDriven?'complete approved script':(minimalGuidance?'less guidance':'full guidance')} · Background: {labels.background} · Frequency: {labels.frequency}</Text>
   </ScrollView></SafeAreaView>;
 }

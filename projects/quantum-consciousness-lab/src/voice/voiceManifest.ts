@@ -4,13 +4,15 @@ export const PRACTICE_IDS = [
   'observer','coherence','deep-rest','intention','quantum-foundations','expanded-consciousness','synchronicity-dreams',
   'spacious-awareness','breaking-pattern','heart-coherence','future-self','energy-centers','new-potentials',
   'walking-embodiment','gratitude-receiving','deep-sleep-integration','abundance-identity','purpose-direction','stress-stillness',
+  'become-future-you',
 ] as const;
 
 export type VoicePracticeId = (typeof PRACTICE_IDS)[number];
 export type VoiceAssetKey =
   | 'arrive' | 'regulate' | 'open' | 'closing' | 'drift'
   | 'observer-focus' | 'coherence-focus' | 'deep-rest-focus' | 'intention-focus'
-  | 'quantum-foundations-focus' | 'expanded-consciousness-focus' | 'synchronicity-dreams-focus';
+  | 'quantum-foundations-focus' | 'expanded-consciousness-focus' | 'synchronicity-dreams-focus'
+  | 'become-future-you-full';
 
 const ASSETS: Record<NarratorId, Record<VoiceAssetKey, number>> = {
   female: {
@@ -26,6 +28,7 @@ const ASSETS: Record<NarratorId, Record<VoiceAssetKey, number>> = {
     'quantum-foundations-focus': require('../../assets/voices/v1/female/quantum-foundations-focus.mp3'),
     'expanded-consciousness-focus': require('../../assets/voices/v1/female/expanded-consciousness-focus.mp3'),
     'synchronicity-dreams-focus': require('../../assets/voices/v1/female/synchronicity-dreams-focus.mp3'),
+    'become-future-you-full': require('../../assets/meditations/v1/become-future-you/female.mp3'),
   },
   male: {
     arrive: require('../../assets/voices/v1/male/arrive.mp3'),
@@ -40,6 +43,7 @@ const ASSETS: Record<NarratorId, Record<VoiceAssetKey, number>> = {
     'quantum-foundations-focus': require('../../assets/voices/v1/male/quantum-foundations-focus.mp3'),
     'expanded-consciousness-focus': require('../../assets/voices/v1/male/expanded-consciousness-focus.mp3'),
     'synchronicity-dreams-focus': require('../../assets/voices/v1/male/synchronicity-dreams-focus.mp3'),
+    'become-future-you-full': require('../../assets/meditations/v1/become-future-you/male.mp3'),
   },
 };
 
@@ -63,6 +67,7 @@ const FOCUS_ALIAS: Record<VoicePracticeId, VoiceAssetKey> = {
   'abundance-identity': 'intention-focus',
   'purpose-direction': 'intention-focus',
   'stress-stillness': 'observer-focus',
+  'become-future-you': 'become-future-you-full',
 };
 
 function assertPracticeId(value: string): asserts value is VoicePracticeId {
@@ -71,6 +76,10 @@ function assertPracticeId(value: string): asserts value is VoicePracticeId {
 
 export function assetKeyForPhase(practiceId: string, segmentIndex: number): VoiceAssetKey {
   assertPracticeId(practiceId);
+  if (practiceId === 'become-future-you') {
+    if (segmentIndex !== 0) throw new Error(`Missing neural narration phase: ${practiceId}/${segmentIndex}`);
+    return 'become-future-you-full';
+  }
   if (!Number.isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex > 4) throw new Error(`Missing neural narration phase: ${practiceId}/${segmentIndex}`);
   if (segmentIndex === 0) return 'arrive';
   if (segmentIndex === 1) return 'regulate';

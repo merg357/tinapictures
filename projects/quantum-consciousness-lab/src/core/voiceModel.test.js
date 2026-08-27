@@ -8,6 +8,7 @@ const PRACTICES = [
   'observer','coherence','deep-rest','intention','quantum-foundations','expanded-consciousness','synchronicity-dreams',
   'spacious-awareness','breaking-pattern','heart-coherence','future-self','energy-centers','new-potentials',
   'walking-embodiment','gratitude-receiving','deep-sleep-integration','abundance-identity','purpose-direction','stress-stillness',
+  'become-future-you',
 ];
 
 test('v0.3 ships a dedicated neural voice model instead of device voice selection', () => {
@@ -26,7 +27,8 @@ test('every meditation practice resolves five neural phase slots for either narr
   for (const practiceId of PRACTICES) {
     for (const narratorId of ['female', 'male']) {
       const slots = resolveVoiceSlots(practiceId, narratorId);
-      assert.equal(slots.length, 5, `${practiceId}/${narratorId} must have five phase slots`);
+      const expected = practiceId === 'become-future-you' ? 1 : 5;
+      assert.equal(slots.length, expected, `${practiceId}/${narratorId} must have ${expected} neural slot(s)`);
       for (const [index, slot] of slots.entries()) {
         assert.equal(slot.practiceId, practiceId);
         assert.equal(slot.narratorId, narratorId);

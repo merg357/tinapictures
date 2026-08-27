@@ -1,0 +1,31 @@
+{
+  "title": "Become the Future You",
+  "script": "become_future_you_script.txt",
+  "scriptSha256": "812bf2eb7da5bcf215a127efc178c2c404795761c8d5a9aa1faa717dae9ee0ee",
+  "spokenWordCount": 1855,
+  "pauseSeconds": 575,
+  "sections": 32,
+  "provider": "Microsoft Edge neural voices via edge-tts",
+  "edgeTtsVersion": "7.2.8",
+  "runtimeTtsRequired": false,
+  "narrators": {
+    "female": {
+      "file": "female.mp3",
+      "bytes": 12294188,
+      "sha256": "6aeafe054c09533268b0e44f4b7ef968fe85c9b43f0a89a1a7fa9321f9b01be1",
+      "durationSeconds": 1536.68,
+      "voice": "en-US-JennyNeural",
+      "baseRate": "-12%",
+      "pitch": "-2Hz"
+    },
+    "male": {
+      "file": "male.mp3",
+      "bytes": 12708332,
+      "sha256": "d659840ffa09eab4549a4ec7a50de7a2203f723c6fc9b039632d19542609ded0",
+      "durationSeconds": 1588.448,
+      "voice": "en-US-GuyNeural",
+      "baseRate": "-14%",
+      "pitch": "-6Hz"
+    }
+  }
+}

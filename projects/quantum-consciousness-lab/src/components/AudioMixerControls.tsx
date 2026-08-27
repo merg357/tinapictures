@@ -6,6 +6,7 @@ import { SOUND_TRACKS } from '../audio/soundManifest';
 
 function pct(value: number) { return `${Math.round(value * 100)}%`; }
 function clamp(value: number) { return Math.max(0, Math.min(1, Math.round(value * 10) / 10)); }
+const NARRATION_SPEEDS = [0.65, 0.75, 0.85, 1, 1.15] as const;
 
 function VolumeRow({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 }}>
@@ -35,6 +36,12 @@ export function AudioMixerControls({ settings, onChange, compact = false }: { se
       {frequencyTracks.map((track) => <Pressable key={track.id} accessibilityRole="button" accessibilityLabel={`Frequency ${track.label}`} onPress={() => patch({ frequencyTrackId: track.id })} style={{ paddingVertical: 8, paddingHorizontal: 11, borderRadius: 12, backgroundColor: settings.frequencyTrackId === track.id ? '#30284B' : COLORS.bg, borderWidth: 1, borderColor: settings.frequencyTrackId === track.id ? COLORS.violet : COLORS.border }}><Text style={{ color: COLORS.text, fontSize: 12, fontWeight: '800' }}>{track.label}</Text></Pressable>)}
     </View>
     <Text style={{ color: '#7D86A5', fontSize: 11, lineHeight: 16, marginTop: 8 }}>Binaural Alpha, Theta, Delta and Gamma options are experimental/early-evidence tools; headphones are recommended for the intended left/right beat. 432 Hz and 528 Hz are offered as experimental tunings, not medical treatment.</Text>
+
+    <Text style={{ color: COLORS.text, fontWeight: '900', marginTop: 14 }}>Narrator speed</Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8 }}>
+      {NARRATION_SPEEDS.map((speed) => <Pressable key={speed} accessibilityRole="button" accessibilityLabel={`Narrator speed ${speed} times`} onPress={() => patch({ narrationSpeed: speed })} style={{ paddingVertical: 8, paddingHorizontal: 11, borderRadius: 12, backgroundColor: Math.abs(settings.narrationSpeed - speed) < 0.001 ? '#2B3150' : COLORS.bg, borderWidth: 1, borderColor: Math.abs(settings.narrationSpeed - speed) < 0.001 ? COLORS.cyan : COLORS.border }}><Text style={{ color: COLORS.text, fontSize: 12, fontWeight: '800' }}>{speed.toFixed(2).replace(/0$/, '')}x</Text></Pressable>)}
+    </View>
+    <Text style={{ color: '#7D86A5', fontSize: 11, lineHeight: 16, marginTop: 8 }}>Slow the narrator without slowing the selected background music or frequency layer. Pitch correction stays enabled.</Text>
 
     <VolumeRow label="Voice" value={settings.narrationVolume} onChange={(narrationVolume) => patch({ narrationVolume })} />
     <VolumeRow label="Background" value={settings.backgroundVolume} onChange={(backgroundVolume) => patch({ backgroundVolume })} />

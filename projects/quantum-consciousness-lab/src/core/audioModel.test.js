@@ -21,6 +21,7 @@ test('v0.4 ships mind music, nature and frequency choices with safe evidence lab
 test('audio defaults keep immersive background on and frequency off', () => {
   assert.equal(DEFAULT_AUDIO_SETTINGS.backgroundTrackId, 'cosmic-ambient');
   assert.equal(DEFAULT_AUDIO_SETTINGS.frequencyTrackId, 'off');
+  assert.equal(DEFAULT_AUDIO_SETTINGS.narrationSpeed, 1);
   assert.equal(DEFAULT_AUDIO_SETTINGS.guidanceLevel, 'full');
 });
 
@@ -29,6 +30,7 @@ test('normalization clamps volumes and rejects unknown track ids', () => {
     backgroundTrackId: 'not-real',
     frequencyTrackId: 'theta-6',
     narrationVolume: 2,
+    narrationSpeed: 0.2,
     backgroundVolume: -1,
     frequencyVolume: 0.45,
     guidanceLevel: 'less',
@@ -36,6 +38,7 @@ test('normalization clamps volumes and rejects unknown track ids', () => {
   assert.equal(value.backgroundTrackId, DEFAULT_AUDIO_SETTINGS.backgroundTrackId);
   assert.equal(value.frequencyTrackId, 'theta-6');
   assert.equal(value.narrationVolume, 1);
+  assert.equal(value.narrationSpeed, 0.5);
   assert.equal(value.backgroundVolume, 0);
   assert.equal(value.frequencyVolume, 0.45);
   assert.equal(value.guidanceLevel, 'less');
